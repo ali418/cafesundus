@@ -1,0 +1,72 @@
+{
+  "settings": "Settings",
+  "storeInformation": "Store Information",
+  "invoiceSettings": "Invoice Settings",
+  "receiptSettings": "Receipt Settings",
+  "paymentMethods": "Payment Methods",
+  "shipping": "Shipping",
+  "notifications": "Notifications",
+  "backupRestore": "Backup & Restore",
+  
+  "storeName": "Store Name",
+  "storeDetails": "Store Details",
+  "storeLogo": "Store Logo",
+  "currency": "Currency",
+  "taxRate": "Tax Rate (%)",
+  "website": "Website",
+  
+  "invoicePrefix": "Invoice Prefix",
+  "invoiceSuffix": "Invoice Suffix",
+  "nextInvoiceNumber": "Next Invoice Number",
+  "showLogo": "Show Logo",
+  "showTaxNumber": "Show Tax Number",
+  "showSignature": "Show Signature",
+  "footerText": "Footer Text",
+  "termsAndConditions": "Terms and Conditions",
+  
+  "showTaxDetails": "Show Tax Details",
+  "printAutomatically": "Print Automatically",
+  "showOnlineOrderQR": "Show Online Order QR Code",
+  
+  "acceptCash": "Accept Cash",
+  "acceptCreditCards": "Accept Credit Cards",
+  "acceptDebitCards": "Accept Debit Cards",
+  "acceptMobilePayments": "Accept Mobile Payments",
+  "defaultPaymentMethod": "Default Payment Method",
+  "mtnPhoneNumber": "MTN Phone Number",
+  "airtelPhoneNumber": "Airtel Phone Number",
+  "mobilePinDigits": "Mobile Payment PIN Digits",
+  "contactStore": "Contact Store",
+  
+  "enableShipping": "Enable Shipping",
+  "defaultShippingMethod": "Default Shipping Method",
+  "freeShippingThreshold": "Free Shipping Threshold",
+  
+
+  "newOrderNotifications": "New Order Notifications",
+  "customerReturnNotifications": "Customer Return Notifications",
+  "systemUpdateNotifications": "System Update Notifications",
+  
+  "autoBackup": "Auto Backup",
+  "backupFrequency": "Backup Frequency",
+  "lastBackup": "Last Backup",
+  "createBackup": "Create Backup",
+  "restoreBackup": "Restore Backup",
+  
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+  
+  "cash": "Cash",
+  "creditCard": "Credit Card",
+  "debitCard": "Debit Card",
+  "mobilePayment": "Mobile Payment",
+  
+  "standardShipping": "Standard Shipping",
+  "expressShipping": "Express Shipping",
+  "storePickup": "Store Pickup",
+  
+  "settingsSaved": "Settings saved successfully",
+  "backupCreated": "Backup created successfully",
+  "backupRestored": "Backup restored successfully"
+}

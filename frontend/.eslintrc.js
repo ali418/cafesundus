@@ -1,0 +1,51 @@
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    jest: true,
+  },
+  extends: [
+    'eslint:recommended',
+    'prettier',
+  ],
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  plugins: ['react'],
+  rules: {
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    'react/prop-types': 'off',
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
+    'no-var': 'error',
+    'prefer-const': 'error',
+    'arrow-body-style': ['error', 'as-needed'],
+    'arrow-parens': ['error', 'always'],
+    'arrow-spacing': 'error',
+    'no-duplicate-imports': 'error',
+    'no-useless-constructor': 'error',
+    'object-shorthand': 'error',
+    'prefer-arrow-callback': 'error',
+    'prefer-rest-params': 'error',
+    'prefer-spread': 'error',
+    'prefer-template': 'error',
+    'template-curly-spacing': 'error',
+    'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
+    'no-trailing-spaces': 'error',
+    'semi': ['error', 'always'],
+    'quotes': ['error', 'single', { avoidEscape: true }],
+    'comma-dangle': ['error', 'always-multiline'],
+    'indent': ['error', 2, { SwitchCase: 1 }],
+  },
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
+};

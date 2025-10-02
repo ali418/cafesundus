@@ -1,0 +1,72 @@
+{
+  "settings": "الإعدادات",
+  "storeInformation": "معلومات المتجر",
+  "invoiceSettings": "إعدادات الفاتورة",
+  "receiptSettings": "إعدادات الإيصال",
+  "paymentMethods": "طرق الدفع",
+  "shipping": "الشحن",
+  "notifications": "الإشعارات",
+  "backupRestore": "النسخ الاحتياطي والاسترجاع",
+  
+  "storeName": "اسم المتجر",
+  "storeDetails": "تفاصيل المتجر",
+  "storeLogo": "شعار المتجر",
+  "currency": "العملة",
+  "taxRate": "نسبة الضريبة (%)",
+  "website": "الموقع الإلكتروني",
+  
+  "invoicePrefix": "بادئة الفاتورة",
+  "invoiceSuffix": "لاحقة الفاتورة",
+  "nextInvoiceNumber": "رقم الفاتورة التالي",
+  "showLogo": "إظهار الشعار",
+  "showTaxNumber": "إظهار الرقم الضريبي",
+  "showSignature": "إظهار التوقيع",
+  "footerText": "نص التذييل",
+  "termsAndConditions": "الشروط والأحكام",
+  
+  "showTaxDetails": "إظهار تفاصيل الضريبة",
+  "printAutomatically": "الطباعة تلقائيًا",
+  "showOnlineOrderQR": "إظهار رمز QR للطلب أونلاين",
+  
+  "acceptCash": "قبول النقد",
+  "acceptCreditCards": "قبول البطاقات الائتمانية",
+  "acceptDebitCards": "قبول بطاقات الخصم",
+  "acceptMobilePayments": "قبول المدفوعات عبر الجوال",
+  "defaultPaymentMethod": "طريقة الدفع الافتراضية",
+  "mtnPhoneNumber": "رقم هاتف MTN",
+  "airtelPhoneNumber": "رقم هاتف Airtel",
+  "mobilePinDigits": "عدد أرقام PIN للدفع عبر الجوال",
+  "contactStore": "اتصل بالمتجر",
+  
+  "enableShipping": "تفعيل الشحن",
+  "defaultShippingMethod": "طريقة الشحن الافتراضية",
+  "freeShippingThreshold": "حد الشحن المجاني",
+  
+  "lowStockNotifications": "إشعارات انخفاض المخزون",
+  "newOrderNotifications": "إشعارات الطلبات الجديدة",
+  "customerReturnNotifications": "إشعارات المرتجعات",
+  "systemUpdateNotifications": "إشعارات تحديث النظام",
+  
+  "autoBackup": "نسخ احتياطي تلقائي",
+  "backupFrequency": "تواتر النسخ الاحتياطي",
+  "lastBackup": "آخر نسخة احتياطية",
+  "createBackup": "إنشاء نسخة احتياطية",
+  "restoreBackup": "استرجاع نسخة احتياطية",
+  
+  "daily": "يومي",
+  "weekly": "أسبوعي",
+  "monthly": "شهري",
+  
+  "cash": "نقد",
+  "creditCard": "بطاقة ائتمانية",
+  "debitCard": "بطاقة خصم",
+  "mobilePayment": "دفع عبر الجوال",
+  
+  "standardShipping": "شحن عادي",
+  "expressShipping": "شحن سريع",
+  "storePickup": "استلام من المتجر",
+  
+  "settingsSaved": "تم حفظ الإعدادات بنجاح",
+  "backupCreated": "تم إنشاء النسخة الاحتياطية بنجاح",
+  "backupRestored": "تم استرجاع النسخة الاحتياطية بنجاح"
+}

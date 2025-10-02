@@ -1,0 +1,22 @@
+const { validationResult } = require('express-validator');
+
+/**
+ * Middleware to validate request using express-validator
+ * Similar to validateRequest but with a different export structure
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+exports.validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('Validation failed');
+    error.statusCode = 422;
+    error.errors = errors.array().map(err => ({
+      field: err.param,
+      message: err.msg
+    }));
+    return next(error);
+  }
+  next();
+};

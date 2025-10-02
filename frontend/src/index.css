@@ -1,0 +1,49 @@
+
+
+@media screen {
+  .only-print { display: none !important; }
+  .no-print { display: block !important; }
+}
+
+/* تنسيق خاص بفاتورة المبيعات لتتطابق مع فاتورة نقطة البيع */
+#receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin: 3px 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+#receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong {
+  display: inline-block !important;
+  text-align: right !important;
+  font-weight: bold !important;
+}
+
+#receipt-print .MuiTableContainer-root {
+  margin: 5px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#receipt-print .MuiTable-root {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 3px 0 !important;
+  border: 1px dashed #000 !important;
+}
+
+#receipt-print .MuiTableCell-root {
+  padding: 2px 3px !important;
+  font-size: 12px !important;
+  border: 1px dotted #ccc !important;
+}
+
+#receipt-print .MuiTypography-body1,
+#receipt-print .MuiTypography-body2 {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}

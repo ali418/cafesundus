@@ -1,0 +1,7 @@
+{
+  "items": [
+    { "productId": 9, "quantity": 1 }
+  ],
+  "paymentMethod": "cash",
+  "paymentStatus": "paid"
+}

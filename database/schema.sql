@@ -1,0 +1,135 @@
+-- Auto-generated schema.sql file
+-- Generated on: 2024-08-02
+
+-- Table: users
+CREATE TABLE IF NOT EXISTS "users" (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  email VARCHAR(100) UNIQUE,
+  role VARCHAR(20) NOT NULL DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: products
+CREATE TABLE IF NOT EXISTS "products" (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  category_id INTEGER REFERENCES categories(id),
+  stock_quantity INTEGER NOT NULL DEFAULT 0,
+  image_url VARCHAR(255),
+  barcode VARCHAR(50) UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: categories
+CREATE TABLE IF NOT EXISTS "categories" (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: customers
+CREATE TABLE IF NOT EXISTS "customers" (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20),
+  email VARCHAR(100) UNIQUE,
+  address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: sales
+CREATE TABLE IF NOT EXISTS "sales" (
+  id SERIAL PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  total_amount DECIMAL(10, 2) NOT NULL,
+  payment_method VARCHAR(20) NOT NULL,
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: sale_items
+CREATE TABLE IF NOT EXISTS "sale_items" (
+  id SERIAL PRIMARY KEY,
+  sale_id INTEGER NOT NULL REFERENCES sales(id),
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  quantity INTEGER NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  subtotal DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: inventory
+CREATE TABLE IF NOT EXISTS "inventory" (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  quantity INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: inventory_transactions
+CREATE TABLE IF NOT EXISTS "inventory_transactions" (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  quantity INTEGER NOT NULL,
+  transaction_type VARCHAR(20) NOT NULL,
+  reference_id INTEGER,
+  notes TEXT,
+  user_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: settings
+CREATE TABLE IF NOT EXISTS "settings" (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(50) NOT NULL UNIQUE,
+  value TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: login_history
+CREATE TABLE IF NOT EXISTS "login_history" (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  logout_time TIMESTAMP,
+  ip_address VARCHAR(45),
+  user_agent TEXT
+);
+
+-- Table: notifications
+CREATE TABLE IF NOT EXISTS "notifications" (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indices
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_sales_customer ON sales(customer_id);
+CREATE INDEX idx_sales_user ON sales(user_id);
+CREATE INDEX idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX idx_sale_items_product ON sale_items(product_id);
+CREATE INDEX idx_inventory_product ON inventory(product_id);
+CREATE INDEX idx_inventory_transactions_product ON inventory_transactions(product_id);
+CREATE INDEX idx_inventory_transactions_user ON inventory_transactions(user_id);
+CREATE INDEX idx_login_history_user ON login_history(user_id);
+CREATE INDEX idx_notifications_user ON notifications(user_id);
