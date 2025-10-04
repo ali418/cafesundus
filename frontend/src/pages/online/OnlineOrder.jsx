@@ -86,7 +86,7 @@ const getProductImageUrl = (product) => {
   // Absolute URL
   if (/^https?:\/\//i.test(img)) return img;
 
-  // Normalize uploads path and use relative URL (works with proxy in dev and backend in prod)
+  // استخدام مسار نسبي بدلاً من مسار مطلق لتجنب مشاكل CORS
   // This avoids CORS issues by using the same origin
   if (img.startsWith('/uploads/')) return `/api/v1${img}`;
   if (img.startsWith('uploads/')) return `/api/v1/${img}`;

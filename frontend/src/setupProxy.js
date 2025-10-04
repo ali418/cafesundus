@@ -42,6 +42,12 @@ module.exports = function (app) {
       changeOrigin: true,
       timeout: 60000, // Increase timeout to 60 seconds
       proxyTimeout: 60000, // Increase proxy timeout to 60 seconds
+      onProxyRes: function(proxyRes) {
+        // إضافة رؤوس CORS للسماح بالوصول من أي مصدر
+        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+        proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        proxyRes.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+      },
       onError: (err, req, res) => {
         console.error('Proxy error:', err);
         res.writeHead(500, {
