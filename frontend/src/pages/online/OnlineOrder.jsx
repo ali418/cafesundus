@@ -88,17 +88,17 @@ const getProductImageUrl = (product) => {
 
   // استخدام مسار نسبي بدلاً من مسار مطلق لتجنب مشاكل CORS
   // This avoids CORS issues by using the same origin
-  if (img.startsWith('/uploads/')) return `/api/v1${img}`;
-  if (img.startsWith('uploads/')) return `/api/v1/${img}`;
+  if (img.startsWith('/uploads/')) return `http://localhost:3005/api/v1${img}`;
+  if (img.startsWith('uploads/')) return `http://localhost:3005/api/v1/${img}`;
 
   // Likely a filename
   if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    return `/api/v1/uploads/${img}`;
+    return `http://localhost:3005/api/v1/uploads/${img}`;
   }
   
   // If the image path doesn't match any of the above patterns, try to construct a valid path
   if (img) {
-    return `/api/v1/uploads/${img}`;
+    return `http://localhost:3005/api/v1/uploads/${img}`;
   }
 
   return placeholderImage;

@@ -523,11 +523,11 @@ const Inventory = () => {
                     label={t('inventory:status')}
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
-                    <MenuItem value="all">{t('all')}</MenuItem>
-                    <MenuItem value="ok">{t('inventory:inStock')}</MenuItem>
-                    <MenuItem value="warning">{t('inventory:lowStock')}</MenuItem>
-                    <MenuItem value="critical">{t('inventory:criticalStock')}</MenuItem>
-                    <MenuItem value="out_of_stock">{t('inventory:outOfStock')}</MenuItem>
+                    <MenuItem key="all" value="all">{t('all')}</MenuItem>
+                    <MenuItem key="ok" value="ok">{t('inventory:inStock')}</MenuItem>
+                    <MenuItem key="warning" value="warning">{t('inventory:lowStock')}</MenuItem>
+                    <MenuItem key="critical" value="critical">{t('inventory:criticalStock')}</MenuItem>
+                    <MenuItem key="out_of_stock" value="out_of_stock">{t('inventory:outOfStock')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -715,19 +715,19 @@ const Inventory = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleViewItem}>
+        <MenuItem key="view" onClick={handleViewItem}>
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('view')} />
         </MenuItem>
-        <MenuItem onClick={handleEditItem}>
+        <MenuItem key="edit" onClick={handleEditItem}>
           <ListItemIcon>
             <Edit fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('edit')} />
         </MenuItem>
-        <MenuItem onClick={handleRestockOpen}>
+        <MenuItem key="restock" onClick={handleRestockOpen}>
           <ListItemIcon>
             <TrendingUp fontSize="small" />
           </ListItemIcon>

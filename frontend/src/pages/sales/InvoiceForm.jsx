@@ -424,9 +424,9 @@ const InvoiceForm = () => {
                         onChange={formik.handleChange}
                         error={formik.touched.status && Boolean(formik.errors.status)}
                       >
-                        <MenuItem value="pending">{t('sales:invoiceStatus.pending')}</MenuItem>
-                        <MenuItem value="paid">{t('sales:invoiceStatus.paid')}</MenuItem>
-                        <MenuItem value="overdue">{t('sales:invoiceStatus.overdue')}</MenuItem>
+                        <MenuItem key="pending" value="pending">{t('sales:invoiceStatus.pending')}</MenuItem>
+                        <MenuItem key="paid" value="paid">{t('sales:invoiceStatus.paid')}</MenuItem>
+                        <MenuItem key="overdue" value="overdue">{t('sales:invoiceStatus.overdue')}</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -441,9 +441,9 @@ const InvoiceForm = () => {
                         onChange={formik.handleChange}
                         error={formik.touched.paymentMethod && Boolean(formik.errors.paymentMethod)}
                       >
-                        <MenuItem value="cash">{t('sales:paymentMethods.cash')}</MenuItem>
-                        <MenuItem value="credit_card">{t('sales:paymentMethods.card')}</MenuItem>
-                        <MenuItem value="bank_transfer">{t('sales:paymentMethods.bank_transfer')}</MenuItem>
+                        <MenuItem key="cash" value="cash">{t('sales:paymentMethods.cash')}</MenuItem>
+                        <MenuItem key="credit_card" value="credit_card">{t('sales:paymentMethods.card')}</MenuItem>
+                        <MenuItem key="bank_transfer" value="bank_transfer">{t('sales:paymentMethods.bank_transfer')}</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>

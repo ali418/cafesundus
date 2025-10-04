@@ -541,19 +541,19 @@ const Categories = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleViewCategory}>
+        <MenuItem key="view" onClick={handleViewCategory}>
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('view')} />
         </MenuItem>
-        <MenuItem onClick={handleEditCategory}>
+        <MenuItem key="edit" onClick={handleEditCategory}>
           <ListItemIcon>
             <Edit fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('edit')} />
         </MenuItem>
-        <MenuItem onClick={handleDeleteClick}>
+        <MenuItem key="delete" onClick={handleDeleteClick}>
           <ListItemIcon>
             <Delete fontSize="small" />
           </ListItemIcon>
@@ -641,8 +641,8 @@ const Categories = () => {
                 onChange={handleCategoryFormChange}
                 label={t('status')}
               >
-                <MenuItem value="active">{t('active')}</MenuItem>
-                <MenuItem value="inactive">{t('inactive')}</MenuItem>
+                <MenuItem key="active" value="active">{t('active')}</MenuItem>
+                <MenuItem key="inactive" value="inactive">{t('inactive')}</MenuItem>
               </Select>
             </FormControl>
           </Box>

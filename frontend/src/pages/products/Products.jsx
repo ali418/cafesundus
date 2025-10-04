@@ -742,19 +742,19 @@ const Products = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleViewProduct}>
+        <MenuItem key="view" onClick={handleViewProduct}>
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('view')} />
         </MenuItem>
-        <MenuItem onClick={handleEditProduct}>
+        <MenuItem key="edit" onClick={handleEditProduct}>
           <ListItemIcon>
             <Edit fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('edit')} />
         </MenuItem>
-        <MenuItem onClick={handleDeleteClick}>
+        <MenuItem key="delete" onClick={handleDeleteClick}>
           <ListItemIcon>
             <Delete fontSize="small" />
           </ListItemIcon>

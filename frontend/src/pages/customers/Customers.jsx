@@ -579,9 +579,9 @@ const Customers = () => {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <MenuItem value="all">{t('all')}</MenuItem>
-                  <MenuItem value="active">{t('active')}</MenuItem>
-                  <MenuItem value="inactive">{t('inactive')}</MenuItem>
+                  <MenuItem key="all" value="all">{t('all')}</MenuItem>
+                  <MenuItem key="active" value="active">{t('active')}</MenuItem>
+                  <MenuItem key="inactive" value="inactive">{t('inactive')}</MenuItem>
                 </TextField>
               </Grid>
               <Grid item xs={12} md={2}>
@@ -1116,25 +1116,25 @@ const Customers = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleViewCustomer}>
+        <MenuItem key="view" onClick={handleViewCustomer}>
           <ListItemIcon>
             <Visibility fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('view')} />
         </MenuItem>
-        <MenuItem onClick={handleEditCustomer}>
+        <MenuItem key="edit" onClick={handleEditCustomer}>
           <ListItemIcon>
             <Edit fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('edit')} />
         </MenuItem>
-        <MenuItem onClick={handleRewardDialogOpen}>
+        <MenuItem key="reward" onClick={handleRewardDialogOpen}>
           <ListItemIcon>
             <CardGiftcard fontSize="small" />
           </ListItemIcon>
           <ListItemText primary={t('customers:redeemReward')} />
         </MenuItem>
-        <MenuItem onClick={handleDeleteClick}>
+        <MenuItem key="delete" onClick={handleDeleteClick}>
           <ListItemIcon>
             <Delete fontSize="small" />
           </ListItemIcon>

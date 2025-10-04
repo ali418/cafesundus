@@ -460,8 +460,8 @@ const CustomerForm = () => {
                     onChange={handleChange}
                     label={t('customers:source', 'مصدر العميل')}
                   >
-                    <MenuItem value="registered">{t('customers:registered', 'مسجل')}</MenuItem>
-                    <MenuItem value="online">{t('customers:online', 'أونلاين')}</MenuItem>
+                    <MenuItem key="registered" value="registered">{t('customers:registered', 'مسجل')}</MenuItem>
+                  <MenuItem key="online" value="online">{t('customers:online', 'أونلاين')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
