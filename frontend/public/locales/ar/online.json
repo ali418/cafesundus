@@ -2,6 +2,11 @@
   "pageTitle": {
     "onlineOrder": "كافيه سندس - الطلب عبر الإنترنت"
   },
+  "sales": {
+    "categories": {
+      "all": "الكل"
+    }
+  },
   "selectProducts": "اختر المنتجات",
   "customerInfo": "معلومات العميل",
   "confirmOrder": "تأكيد الطلب",

@@ -2,6 +2,11 @@
   "pageTitle": {
     "onlineOrder": "Cafe Sundus - Online Order"
   },
+  "sales": {
+    "categories": {
+      "all": "All"
+    }
+  },
   "selectProducts": "Select Products",
   "customerInfo": "Customer Information",
   "confirmOrder": "Confirm Order",

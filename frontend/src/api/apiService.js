@@ -8,6 +8,9 @@ axios.defaults.timeoutErrorMessage = 'Server request timed out. Please try again
 // Get API URL from environment variables with fallback
 const API_URL = process.env.REACT_APP_API_URL || '/api/v1'; // Use relative path to work with CRA proxy
 
+// Define direct backend URL for special cases
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3005';
+
 // Create axios instance with retry logic
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -261,20 +264,23 @@ const apiService = {
   },
 
   // Products
-  getProducts: async () => {
+  // Use direct backend URL to avoid proxy timeout issues
+  getProducts: async (params = {}) => {
     try {
-      const response = await axiosInstance.get('/products');
-      console.log('Raw API response:', response);
-      console.log('Response data structure:', response.data);
-      // Ensure we're returning the array of products
-      // The backend returns { success: true, count: X, data: [...products] }
-      const products = response.data.data || [];
-      console.log('Processed products:', products);
-      return products;
+      console.log('Fetching products directly from backend...');
+      // Create a direct axios request to backend instead of using proxy
+      const response = await axios.get(`${BACKEND_URL}/api/v1/products`, { 
+        params, 
+        timeout: 30000,
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      // Backend returns { success: true, count, data: [...] }
+      return response.data?.data || response.data || [];
     } catch (error) {
       console.error('Error fetching products:', error);
-      // Add friendly message to the error
-      error.userMessage = error.friendlyMessage || 'Failed to load products. Please try again later.';
       throw error;
     }
   },

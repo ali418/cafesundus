@@ -10,12 +10,12 @@
  * @param {number} maxDigits - Maximum number of digits for the result (default: 6)
  * @returns {number} A numeric ID derived from the UUID
  */
-exports.uuidToNumericId = (uuid, maxDigits = 6) => {
+exports.uuidToNumericId = (uuid, maxDigits = 9) => {
   if (!uuid) return null;
   
   try {
-    // Remove hyphens and take first 8 characters of the UUID
-    const hexSubstring = uuid.toString().replace(/-/g, '').substring(0, 8);
+    // Remove hyphens and take first 12 characters of the UUID for larger range
+    const hexSubstring = uuid.toString().replace(/-/g, '').substring(0, 12);
     
     // Convert hex to decimal
     const decimal = parseInt(hexSubstring, 16);
@@ -35,15 +35,28 @@ exports.uuidToNumericId = (uuid, maxDigits = 6) => {
  * 
  * @param {number} numericId - The numeric ID to find a UUID for
  * @param {Object} model - The Sequelize model to search in
- * @param {number} maxDigits - Maximum number of digits for the numeric ID (default: 6)
+ * @param {number} maxDigits - Maximum number of digits for the numeric ID (default: 9)
  * @returns {string|null} The first UUID that converts to the given numeric ID, or null if none found
  */
-exports.findUuidByNumericId = async (numericId, model, maxDigits = 6) => {
+exports.findUuidByNumericId = async (numericId, model, maxDigits = 9) => {
   if (!numericId || !model) return null;
   
   try {
     // Convert numericId to a number if it's a string
     const targetId = parseInt(numericId, 10);
+    
+    // إذا كان الرقم كبيرًا جدًا، نبحث عن السجل مباشرة بالمعرف
+    if (targetId > 999999) {
+      try {
+        // محاولة البحث عن السجل مباشرة باستخدام المعرف الرقمي كمعرف فريد
+        const directRecord = await model.findByPk(numericId.toString());
+        if (directRecord) {
+          return directRecord.id;
+        }
+      } catch (error) {
+        console.error('Error finding record by numeric ID:', error);
+      }
+    }
     
     // Get only the IDs from the model for better performance
     const records = await model.findAll({

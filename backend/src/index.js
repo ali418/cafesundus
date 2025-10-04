@@ -80,7 +80,8 @@ if (isProduction) {
 }
 
 // Set up routes
-app.use(process.env.API_PREFIX || '/api/v1', routes);
+// استخدام مسار واحد فقط لتجنب التداخل
+app.use('/api/v1', routes);
 
 // Serve static files from the frontend build directory
 app.use(express.static(path.join(__dirname, '../../frontend/build')));
@@ -88,16 +89,23 @@ app.use(express.static(path.join(__dirname, '../../frontend/build')));
 // Serve the standalone online-order HTML from the root public folder
 app.get('/online-order', (req, res) => {
   // استخدام مسار مطلق للملف مع التحقق من وجوده
-  const onlineOrderPath = path.join(__dirname, '../../public', 'online-order.html');
+  const projectRootPath = path.join(__dirname, '../..');
+  const onlineOrderPath = path.join(projectRootPath, 'public', 'online-order.html');
   const fallbackPath = path.join(__dirname, '../public', 'online-order.html');
+  const directPath = path.join(projectRootPath, 'cafe sundus', 'public', 'online-order.html');
   
-  // التحقق من وجود الملف في المسار الأساسي
+  // التحقق من وجود الملف في المسارات المختلفة
   if (fs.existsSync(onlineOrderPath)) {
+    console.log('تم العثور على ملف online-order.html في المسار:', onlineOrderPath);
     return res.sendFile(onlineOrderPath);
   } 
-  // التحقق من وجود الملف في المسار البديل
   else if (fs.existsSync(fallbackPath)) {
+    console.log('تم العثور على ملف online-order.html في المسار:', fallbackPath);
     return res.sendFile(fallbackPath);
+  }
+  else if (fs.existsSync(directPath)) {
+    console.log('تم العثور على ملف online-order.html في المسار:', directPath);
+    return res.sendFile(directPath);
   }
   // إذا لم يوجد الملف، إعادة توجيه إلى الصفحة الرئيسية
   else {
@@ -236,7 +244,14 @@ const PORT = Number(process.env.PORT || 3002);
       console.warn('Warning: Could not verify/fix inventory_transactions.inventory_id type:', e.message || e);
     }
 
-    app.listen(PORT, () => {
+    // Serve frontend build
+app.use(express.static(path.join(__dirname, '../../frontend/build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/build', 'index.html'));
+});
+
+app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {

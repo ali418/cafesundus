@@ -6,14 +6,14 @@ const fs = require('fs');
 const path = require('path');
 
 // محاولة قراءة ملف التكوين إذا كان موجودًا
-// استخدام المنفذ 3003 للخادم الخلفي
-let BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3003';
+// استخدام المنفذ 3005 للخادم الخلفي (تم تغييره من 3003 إلى 3005)
+let BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3005';
 
 // محاولة استيراد ملف التكوين بطريقة متوافقة مع Node.js
 try {
   // قراءة ملف التكوين كنص
   const configPath = path.resolve(__dirname, 'config', 'networkConfig.js');
-  if (fs.existsSync(configPath)) {
+  if (fs.existsSync(configPath) && !process.env.REACT_APP_BACKEND_URL) {
     const configContent = fs.readFileSync(configPath, 'utf8');
     // استخراج قيمة BACKEND_URL من النص
     const match = configContent.match(/BACKEND_URL\s*=\s*['"`](.*?)['"`]/i);
@@ -40,6 +40,8 @@ module.exports = function (app) {
     createProxyMiddleware({
       target: BACKEND_URL,
       changeOrigin: true,
+      timeout: 60000, // Increase timeout to 60 seconds
+      proxyTimeout: 60000, // Increase proxy timeout to 60 seconds
       onError: (err, req, res) => {
         console.error('Proxy error:', err);
         res.writeHead(500, {
@@ -59,12 +61,13 @@ module.exports = function (app) {
     })
   );
 
-  // Proxy /online-order to backend so the dev server on 3001 serves the static HTML from root public
+  // Proxy /online-order to frontend so it serves the React component
   app.use(
     '/online-order',
-    createProxyMiddleware({
-      target: BACKEND_URL,
-      changeOrigin: true,
-    })
+    (req, res, next) => {
+      // Forward to React router instead of proxying to backend
+      req.url = '/';
+      next();
+    }
   );
 };

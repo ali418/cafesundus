@@ -36,6 +36,10 @@ if (process.env.DATABASE_URL) {
       timestamps: true,
       underscored: true,
     },
+    dialectOptions: {
+      // استخدام مسار PostgreSQL المحدد في ملف .env
+      bin: process.env.POSTGRES_PATH
+    }
   };
 
   // Initialize Sequelize
@@ -47,7 +51,9 @@ if (process.env.DATABASE_URL) {
       ...config,
       dialectOptions: {
         // Fix for notifications table not found
-        useUTC: false
+        useUTC: false,
+        // استخدام مسار PostgreSQL المحدد في ملف .env
+        bin: process.env.PG_BIN_PATH
       }
     }
   );

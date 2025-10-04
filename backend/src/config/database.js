@@ -13,6 +13,10 @@ module.exports = {
       timestamps: true,
       underscored: true,
     },
+    dialectOptions: {
+      useUTC: false,
+      bin: process.env.PG_BIN_PATH
+    },
   },
   test: {
     username: process.env.DB_USER || 'postgres',
