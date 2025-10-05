@@ -35,7 +35,7 @@ const InvoicePrint = forwardRef(({ invoice }, ref) => {
   const taxRatePercent = Number(storeSettings?.taxRate) || derivedTaxPercent;
 
   return (
-    <Box ref={ref} id="receipt-print" sx={{ p: 3, maxWidth: '210mm', margin: '0 auto', backgroundColor: 'white', color: 'black' }}>
+    <Box ref={ref} id="receipt-container" className="receipt-container" sx={{ p: 3, maxWidth: '210mm', margin: '0 auto', backgroundColor: 'white', color: 'black' }}>
       <Paper elevation={0} sx={{ p: 0 }}>
         {/* Header Section */}
         <Grid container spacing={3} sx={{ mb: 3 }}>

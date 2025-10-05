@@ -171,7 +171,7 @@ const SaleDetails = () => {
         </Box>
       </Box>
 
-      <div ref={printRef} id="receipt-print">
+      <div ref={printRef} id="receipt-container" className="receipt-container">
         <Paper sx={{ p: 3, mb: 3 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>

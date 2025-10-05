@@ -5,7 +5,48 @@
   .no-print { display: block !important; }
 }
 
+/* Code for printing on Xprinter XP-P53A (58mm) */ 
+@media print { 
+  /* إخفاء كل شيء ما عدا الفاتورة */ 
+  body * { 
+    visibility: hidden; 
+  } 
+
+  .receipt-container, .receipt-container * { 
+    visibility: visible; 
+  } 
+
+  .receipt-container { 
+    position: absolute; 
+    left: 0; 
+    top: 0; 
+  } 
+  
+  /* --- التنسيقات الأساسية لحل المشكلة --- */ 
+
+  /* 1. تحديد عرض الطباعة الفعلي (أهم نقطة) */ 
+  .receipt-container { 
+    width: 48mm; /* العرض الفعلي للطباعة على ورق 58mm */ 
+    font-family: 'Courier New', Courier, monospace; /* خط مناسب للفواتير */ 
+    font-size: 8pt; /* حجم خط مقروء وصغير */ 
+    margin: 0; 
+    padding: 0; 
+  } 
+
+  /* 2. توسيط النصوص كما طلبت */ 
+  .receipt-container { 
+    text-align: center; 
+  } 
+
+  /* 3. ضمان عدم خروج الصور عن الإطار */ 
+  .receipt-container img { 
+    max-width: 100%; 
+    height: auto; 
+  } 
+}
+
 /* تنسيق خاص بفاتورة المبيعات لتتطابق مع فاتورة نقطة البيع */
+#receipt-container .MuiGrid-container .MuiGrid-item .MuiTypography-body1,
 #receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 {
   display: flex !important;
   justify-content: space-between !important;
@@ -16,6 +57,7 @@
   line-height: 1.5 !important;
 }
 
+#receipt-container .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong,
 #receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong {
   display: inline-block !important;
   text-align: right !important;
