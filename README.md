@@ -74,3 +74,7 @@ The project uses i18next for translations with dynamic loading of translation fi
 ## License
 
 This project is proprietary software owned by Cafe Sundus.
+
+## Update
+
+Minor housekeeping change to trigger CI/deployment.
