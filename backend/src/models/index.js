@@ -7,11 +7,18 @@ const env = process.env.NODE_ENV || 'development';
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
+// Also try to load from Railway environment or production
+if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+  console.log('Running on Railway/Production, using DATABASE_URL');
+  console.log('DATABASE_URL available:', !!process.env.DATABASE_URL);
+}
+
 // Database configuration
 let sequelize;
 
 // Use DATABASE_URL if available, otherwise use individual connection parameters
 if (process.env.DATABASE_URL) {
+  console.log('Using DATABASE_URL for database connection');
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: env === 'development' ? console.log : false,
@@ -20,8 +27,18 @@ if (process.env.DATABASE_URL) {
       underscored: true,
     },
     dialectOptions: {
-      useUTC: false
-    }
+      useUTC: false,
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
   });
 } else {
   const config = {

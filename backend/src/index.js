@@ -133,6 +133,17 @@ const PORT = Number(process.env.PORT || 3000);
 
 (async () => {
   try {
+    console.log('Attempting to connect to database...');
+    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Available' : 'Not available');
+    console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
+    
+    // If in production and DATABASE_URL is not available, try to use Railway's default
+    if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+      console.error('DATABASE_URL not found in production environment!');
+      console.error('Please ensure DATABASE_URL is set in your Railway environment variables.');
+      throw new Error('DATABASE_URL is required for production deployment');
+    }
+    
     await db.sequelize.authenticate();
 
     // Create settings table if it doesn't exist
