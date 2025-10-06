@@ -139,9 +139,13 @@ const PORT = Number(process.env.PORT || 3000);
     
     // If in production and DATABASE_URL is not available, try to use Railway's default
     if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
-      console.error('DATABASE_URL not found in production environment!');
-      console.error('Please ensure DATABASE_URL is set in your Railway environment variables.');
-      throw new Error('DATABASE_URL is required for production deployment');
+      console.error('❌ DATABASE_URL not found in production environment!');
+      console.error('🔧 To fix this:');
+      console.error('   1. Go to your Railway project dashboard');
+      console.error('   2. Navigate to Settings → Variables');
+      console.error('   3. Add DATABASE_URL environment variable');
+      console.error('   4. Use value: postgresql://postgres:CzZNBTInqfVEkHFZmTvwaAeNctJVObVU@postgres.railway.internal:5432/railway');
+      throw new Error('DATABASE_URL is required for production deployment - see logs above for setup instructions');
     }
     
     await db.sequelize.authenticate();
