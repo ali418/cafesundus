@@ -70,7 +70,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Do not count health checks towards the limit
-  skip: (req) => req.path === '/api/v1/health' || req.path === '/health',
+  skip: (req) => req.path === '/api/v1/health' || req.path === '/health' || req.path === '/api/health',
 });
 
 if (isProduction) {
@@ -79,12 +79,14 @@ if (isProduction) {
   console.log('Rate limiter disabled in development');
 }
 
+// ✅ Railway health check endpoint (must be at /api/health)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Set up routes
 // استخدام مسار واحد فقط لتجنب التداخل
 app.use('/api/v1', routes);
-
-// Serve static files from the frontend build directory
-app.use(express.static(path.join(__dirname, '../../frontend/build')));
 
 // Serve the standalone online-order HTML from the root public folder
 app.get('/online-order', (req, res) => {
@@ -114,6 +116,9 @@ app.get('/online-order', (req, res) => {
   }
 });
 
+// Serve frontend build
+app.use(express.static(path.join(__dirname, '../../frontend/build')));
+
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../../frontend/build', 'index.html'));
@@ -123,8 +128,8 @@ app.get('*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-// Use PORT environment variable for consistency
-const PORT = Number(process.env.PORT || 3002);
+// Use PORT environment variable for Railway compatibility
+const PORT = Number(process.env.PORT || 3000);
 
 (async () => {
   try {
@@ -244,14 +249,7 @@ const PORT = Number(process.env.PORT || 3002);
       console.warn('Warning: Could not verify/fix inventory_transactions.inventory_id type:', e.message || e);
     }
 
-    // Serve frontend build
-app.use(express.static(path.join(__dirname, '../../frontend/build')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/build', 'index.html'));
-});
-
-app.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {
