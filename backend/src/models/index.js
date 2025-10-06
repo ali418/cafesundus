@@ -19,27 +19,71 @@ let sequelize;
 // Use DATABASE_URL if available, otherwise use individual connection parameters
 if (process.env.DATABASE_URL) {
   console.log('Using DATABASE_URL for database connection');
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'postgres',
-    logging: env === 'development' ? console.log : false,
-    define: {
-      timestamps: true,
-      underscored: true,
-    },
-    dialectOptions: {
-      useUTC: false,
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
+  
+  // Method 1: Using use_env_variable (Recommended for Railway)
+  try {
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      protocol: 'postgres',
+      logging: env === 'development' ? console.log : false,
+      define: {
+        timestamps: true,
+        underscored: true,
       },
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  });
+      dialectOptions: {
+         useUTC: false,
+         ssl: {
+           require: true,
+           rejectUnauthorized: false,
+         },
+         protocol: 'postgres',
+       },
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    });
+    console.log('✅ Sequelize connected using DATABASE_URL directly');
+  } catch (error) {
+    console.log('⚠️  Direct connection failed, trying URL parsing method');
+    
+    // Method 2: Parse the DATABASE_URL to extract connection details
+    const url = require('url');
+    const dbUrl = new URL(process.env.DATABASE_URL);
+    
+    const config = {
+      username: dbUrl.username,
+      password: dbUrl.password,
+      database: dbUrl.pathname.slice(1), // Remove leading slash
+      host: dbUrl.hostname,
+      port: dbUrl.port || 5432,
+      dialect: 'postgres',
+      logging: env === 'development' ? console.log : false,
+      define: {
+        timestamps: true,
+        underscored: true,
+      },
+      dialectOptions: {
+         useUTC: false,
+         ssl: {
+           require: true,
+           rejectUnauthorized: false,
+         },
+         protocol: 'postgres',
+       },
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    };
+    
+    sequelize = new Sequelize(config.database, config.username, config.password, config);
+    console.log('✅ Sequelize connected using parsed URL parameters');
+  }
 } else {
   const config = {
     username: process.env.DB_USER || 'postgres',
