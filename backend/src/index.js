@@ -88,33 +88,9 @@ app.get('/api/health', (req, res) => {
 // استخدام مسار واحد فقط لتجنب التداخل
 app.use('/api/v1', routes);
 
-// Serve the standalone online-order HTML from the root public folder
-app.get('/online-order', (req, res) => {
-  // استخدام مسار مطلق للملف مع التحقق من وجوده
-  const projectRootPath = path.join(__dirname, '../..');
-  const onlineOrderPath = path.join(projectRootPath, 'public', 'online-order.html');
-  const fallbackPath = path.join(__dirname, '../public', 'online-order.html');
-  const directPath = path.join(projectRootPath, 'cafe sundus', 'public', 'online-order.html');
-  
-  // التحقق من وجود الملف في المسارات المختلفة
-  if (fs.existsSync(onlineOrderPath)) {
-    console.log('تم العثور على ملف online-order.html في المسار:', onlineOrderPath);
-    return res.sendFile(onlineOrderPath);
-  } 
-  else if (fs.existsSync(fallbackPath)) {
-    console.log('تم العثور على ملف online-order.html في المسار:', fallbackPath);
-    return res.sendFile(fallbackPath);
-  }
-  else if (fs.existsSync(directPath)) {
-    console.log('تم العثور على ملف online-order.html في المسار:', directPath);
-    return res.sendFile(directPath);
-  }
-  // إذا لم يوجد الملف، إعادة توجيه إلى الصفحة الرئيسية
-  else {
-    console.error('ملف online-order.html غير موجود في المسارات المتوقعة');
-    return res.redirect('/');
-  }
-});
+// Note: /online-order route is handled by the frontend React app
+// The online order functionality is implemented as a React component
+// Remove the backend route to allow frontend routing to work properly
 
 // Serve frontend build
 app.use(express.static(path.join(__dirname, '../../frontend/build')));
