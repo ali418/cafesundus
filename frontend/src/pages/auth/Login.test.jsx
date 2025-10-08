@@ -55,7 +55,7 @@ describe('Login Component', () => {
     renderLoginComponent();
 
     // Check if form elements are rendered
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
     expect(screen.getByText(/forgot password/i)).toBeInTheDocument();
@@ -71,18 +71,18 @@ describe('Login Component', () => {
 
     // Check for validation errors
     await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/username is required/i)).toBeInTheDocument();
       expect(screen.getByText(/password is required/i)).toBeInTheDocument();
     });
 
-    // Fill in email with invalid format
-    const emailInput = screen.getByLabelText(/email/i);
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    // Fill in username
+    const usernameInput = screen.getByLabelText(/username/i);
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.click(loginButton);
 
-    // Check for email format validation error
+    // Check for password validation error only
     await waitFor(() => {
-      expect(screen.getByText(/invalid email format/i)).toBeInTheDocument();
+      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
     });
   });
 
@@ -94,6 +94,7 @@ describe('Login Component', () => {
         user: {
           id: 1,
           name: 'Test User',
+          username: 'testuser',
           email: 'test@example.com',
           role: 'admin',
         },
@@ -103,11 +104,11 @@ describe('Login Component', () => {
     renderLoginComponent();
 
     // Fill in form with valid data
-    const emailInput = screen.getByLabelText(/email/i);
+    const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
     const loginButton = screen.getByRole('button', { name: /login/i });
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(loginButton);
 
@@ -116,7 +117,7 @@ describe('Login Component', () => {
       expect(axios.post).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/login'),
         {
-          email: 'test@example.com',
+          username: 'testuser',
           password: 'password123',
         }
       );
@@ -130,7 +131,7 @@ describe('Login Component', () => {
           payload: expect.objectContaining({
             id: 1,
             name: 'Test User',
-            email: 'test@example.com',
+            username: 'testuser',
           }),
         })
       );
@@ -151,11 +152,11 @@ describe('Login Component', () => {
     renderLoginComponent();
 
     // Fill in form with valid data
-    const emailInput = screen.getByLabelText(/email/i);
+    const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
     const loginButton = screen.getByRole('button', { name: /login/i });
 
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'wrong-password' } });
     fireEvent.click(loginButton);
 
