@@ -21,10 +21,13 @@ const app = express();
 app.use(helmet()); // Security headers
 app.use(compression()); // Compress responses
 // Improve CORS to accept multiple origins from env (comma-separated)
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,https://cafesundus.up.railway.app,https://cafesundus-production.up.railway.app')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
 // During development, allow all origins
 if (process.env.NODE_ENV === 'development') {
   app.use(cors({
@@ -40,8 +43,10 @@ if (process.env.NODE_ENV === 'development') {
         if (!origin || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
+        console.log('CORS blocked origin:', origin);
         return callback(new Error('Not allowed by CORS'));
       },
+      methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     })
   );
