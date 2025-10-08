@@ -8,52 +8,21 @@ const env = process.env.NODE_ENV || 'development';
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
 // Database configuration
-let sequelize;
-
-// Use DATABASE_URL for connection
-if (process.env.DATABASE_URL) {
-  console.log('Using DATABASE_URL for database connection');
-  
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'postgres',
-    protocol: 'postgres',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    },
-    logging: false
-  });
-  
-  sequelize.authenticate()
-    .then(() => console.log("✅ Connected to PostgreSQL successfully"))
-    .catch(err => console.error("❌ Database connection error:", err));
-    
-} else {
-  // Fallback for local development
-  const config = {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'cafe_sundus',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    logging: env === 'development' ? console.log : false,
-    define: {
-      timestamps: true,
-      underscored: true,
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  protocol: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
     }
-  };
+  },
+  logging: false
+});
 
-  // Initialize Sequelize
-  sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
-    config
-  );
-}
+sequelize.authenticate()
+  .then(() => console.log("✅ Connected to PostgreSQL successfully"))
+  .catch(err => console.error("❌ Database connection error:", err));
 
 const db = {};
 
