@@ -1,77 +1,99 @@
-// سكريبت لإعادة تعيين كلمة مرور المستخدم admin أو إنشاء مستخدم جديد
-const bcrypt = require('bcrypt');
-const { Sequelize } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 
-// قراءة ملف .env.production
-const envPath = path.join(__dirname, '.env.production');
-const envContent = fs.readFileSync(envPath, 'utf8');
+// تأكيد تشغيل السكريبت ببيئة التطوير لتعطيل SSL في الاتصال المحلي
+process.env.NODE_ENV = 'development';
 
-// استخراج معلومات قاعدة البيانات من ملف .env
-const dbConfig = {};
-envContent.split('\n').forEach(line => {
-  const [key, value] = line.split('=');
-  if (key && value) {
-    dbConfig[key.trim()] = value.trim();
+// تحميل إعدادات البيئة: إن لم تكن DATABASE_URL موجودة نقرأها من .env.production
+(() => {
+  if (!process.env.DATABASE_URL) {
+    try {
+      const envPath = path.join(__dirname, '.env.production');
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8');
+        const kv = {};
+        content.split('\n').forEach(line => {
+          const [key, ...rest] = line.split('=');
+          if (!key || !rest.length) return;
+          const value = rest.join('=').trim();
+          kv[key.trim()] = value;
+        });
+        if (!process.env.DATABASE_URL && kv.DATABASE_URL) {
+          process.env.DATABASE_URL = kv.DATABASE_URL;
+        }
+        if (!process.env.NODE_ENV && kv.NODE_ENV) {
+          process.env.NODE_ENV = kv.NODE_ENV;
+        }
+        if (!process.env.DATABASE_URL) {
+          let host = kv.DB_HOST || 'localhost';
+          if (host === 'postgres') host = 'localhost';
+          const port = kv.DB_PORT || '5432';
+          const name = kv.DB_NAME || 'postgres';
+          const user = kv.DB_USER || 'postgres';
+          const pass = kv.DB_PASSWORD || '';
+          process.env.DATABASE_URL = `postgres://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${name}`;
+        }
+      }
+    } catch (e) {
+      // تجاهل أخطاء القراءة
+    }
   }
+})();
+
+// إنشاء اتصال سيكوالايز مستقل وتعريف نموذج User فقط لتجنب مزامنة جميع النماذج
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  logging: false
 });
+const defineUser = require('./src/models/user');
+const User = defineUser(sequelize, Sequelize.DataTypes);
 
-// إعداد اتصال قاعدة البيانات
-const sequelize = new Sequelize(
-  dbConfig.DB_NAME || 'cafe_sundus',
-  dbConfig.DB_USER || 'root',
-  dbConfig.DB_PASSWORD || '',
-  {
-    host: dbConfig.DB_HOST || 'localhost',
-    dialect: 'mysql',
-    logging: false
-  }
-);
-
-async function resetAdminPassword() {
+async function ensureAdmin() {
   try {
-    // التحقق من الاتصال بقاعدة البيانات
     await sequelize.authenticate();
-    console.log('تم الاتصال بقاعدة البيانات بنجاح');
 
-    // تشفير كلمة المرور الجديدة
-    const hashedPassword = bcrypt.hashSync('aliali!@#', 10);
-    
-    // التحقق من وجود المستخدم admin
-    const [results] = await sequelize.query(
-      "SELECT * FROM users WHERE username = 'admin'"
+    const username = 'admin';
+    const rawPassword = 'aliali!@#';
+    const hashed = await bcrypt.hash(rawPassword, 12);
+
+    // محاولة التحديث أولاً باستخدام استعلامات SQL مباشرة لتفادي اختلاف أسماء الأعمدة
+    const [updateResult, updateMeta] = await sequelize.query(
+      'UPDATE users SET password = :password, is_active = TRUE WHERE username = :username',
+      { replacements: { password: hashed, username } }
     );
 
-    if (results.length > 0) {
-      // تحديث كلمة المرور للمستخدم الموجود
-      await sequelize.query(
-        "UPDATE users SET password = ? WHERE username = 'admin'",
-        {
-          replacements: [hashedPassword]
-        }
-      );
-      console.log('تم تحديث كلمة المرور للمستخدم admin بنجاح');
+    const updatedRows = Array.isArray(updateMeta) ? updateMeta[1] : (updateMeta && updateMeta.rowCount) || 0;
+    if (updatedRows && updatedRows > 0) {
+      console.log('✅ تم تحديث كلمة مرور مستخدم admin وتفعيله');
     } else {
-      // إنشاء مستخدم جديد
+      const { v4: uuidv4 } = require('uuid');
       await sequelize.query(
-        "INSERT INTO users (username, password, name, role, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
+        'INSERT INTO users (id, username, email, password, full_name, role, is_active) VALUES (:id, :username, :email, :password, :full_name, :role, TRUE)',
         {
-          replacements: ['admin', hashedPassword, 'المسؤول', 'admin', 'admin@example.com']
+          replacements: {
+            id: uuidv4(),
+            username,
+            email: 'admin@example.com',
+            password: hashed,
+            full_name: 'Admin',
+            role: 'admin',
+          }
         }
       );
-      console.log('تم إنشاء مستخدم admin جديد بنجاح');
+      console.log('✅ تم إنشاء مستخدم admin جديد');
     }
 
-    console.log('يمكنك الآن تسجيل الدخول باستخدام:');
-    console.log('اسم المستخدم: admin');
-    console.log('كلمة المرور: aliali!@#');
-
+    console.log('يمكنك الآن تسجيل الدخول بالبيانات التالية:');
+    console.log('username: admin');
+    console.log('password: aliali!@#');
   } catch (error) {
-    console.error('حدث خطأ:', error);
+    console.error('❌ خطأ أثناء إعداد المستخدم admin:', error);
+    process.exitCode = 1;
   } finally {
-    await sequelize.close();
+    try { await sequelize.close(); } catch (_) {}
   }
 }
 
-resetAdminPassword();
+ensureAdmin();

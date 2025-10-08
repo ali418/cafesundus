@@ -8,15 +8,17 @@ const env = process.env.NODE_ENV || 'development';
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
 // Database configuration
+const useSSL = env === 'production' || process.env.DATABASE_SSL === 'true';
+
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
   protocol: 'postgres',
-  dialectOptions: {
+  dialectOptions: useSSL ? {
     ssl: {
       require: true,
       rejectUnauthorized: false
     }
-  },
+  } : {},
   logging: false
 });
 
