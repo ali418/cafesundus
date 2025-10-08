@@ -9,7 +9,12 @@ axios.defaults.timeoutErrorMessage = 'Server request timed out. Please try again
 const API_URL = process.env.REACT_APP_API_URL || '/api/v1'; // Use relative path to work with CRA proxy
 
 // Define direct backend URL for special cases
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3005';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin.includes('railway.app') 
+  ? window.location.origin 
+  : 'http://localhost:3005';
+
+// Log the backend URL being used
+console.log('Using backend URL:', BACKEND_URL);
 
 // Create axios instance with retry logic
 const axiosInstance = axios.create({
@@ -264,18 +269,14 @@ const apiService = {
   },
 
   // Products
-  // Use direct backend URL to avoid proxy timeout issues
+  // Use axiosInstance to avoid CSP issues
   getProducts: async (params = {}) => {
     try {
-      console.log('Fetching products directly from backend...');
-      // Create a direct axios request to backend instead of using proxy
-      const response = await axios.get(`${BACKEND_URL}/api/v1/products`, { 
+      console.log('Fetching products using axiosInstance...');
+      // Use axiosInstance instead of direct axios call to respect CSP
+      const response = await axiosInstance.get('/products', { 
         params, 
-        timeout: 30000,
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        }
+        timeout: 30000
       });
       // Backend returns { success: true, count, data: [...] }
       return response.data?.data || response.data || [];
