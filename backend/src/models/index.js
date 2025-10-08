@@ -7,84 +7,31 @@ const env = process.env.NODE_ENV || 'development';
 // Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
-// Also try to load from Railway environment or production
-if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
-  console.log('Running on Railway/Production, using DATABASE_URL');
-  console.log('DATABASE_URL available:', !!process.env.DATABASE_URL);
-}
-
 // Database configuration
 let sequelize;
 
-// Use DATABASE_URL if available, otherwise use individual connection parameters
+// Use DATABASE_URL for connection
 if (process.env.DATABASE_URL) {
   console.log('Using DATABASE_URL for database connection');
   
-  // Method 1: Using use_env_variable (Recommended for Railway)
-  try {
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-      dialect: 'postgres',
-      protocol: 'postgres',
-      logging: env === 'development' ? console.log : false,
-      define: {
-        timestamps: true,
-        underscored: true,
-      },
-      dialectOptions: {
-         useUTC: false,
-         ssl: {
-           require: true,
-           rejectUnauthorized: false,
-         },
-         protocol: 'postgres',
-       },
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000,
-      },
-    });
-    console.log('✅ Sequelize connected using DATABASE_URL directly');
-  } catch (error) {
-    console.log('⚠️  Direct connection failed, trying URL parsing method');
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    protocol: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
+    logging: false
+  });
+  
+  sequelize.authenticate()
+    .then(() => console.log("✅ Connected to PostgreSQL successfully"))
+    .catch(err => console.error("❌ Database connection error:", err));
     
-    // Method 2: Parse the DATABASE_URL to extract connection details
-    const url = require('url');
-    const dbUrl = new URL(process.env.DATABASE_URL);
-    
-    const config = {
-      username: dbUrl.username,
-      password: dbUrl.password,
-      database: dbUrl.pathname.slice(1), // Remove leading slash
-      host: dbUrl.hostname,
-      port: dbUrl.port || 5432,
-      dialect: 'postgres',
-      logging: env === 'development' ? console.log : false,
-      define: {
-        timestamps: true,
-        underscored: true,
-      },
-      dialectOptions: {
-         useUTC: false,
-         ssl: {
-           require: true,
-           rejectUnauthorized: false,
-         },
-         protocol: 'postgres',
-       },
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000,
-      },
-    };
-    
-    sequelize = new Sequelize(config.database, config.username, config.password, config);
-    console.log('✅ Sequelize connected using parsed URL parameters');
-  }
 } else {
+  // Fallback for local development
   const config = {
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
@@ -96,10 +43,6 @@ if (process.env.DATABASE_URL) {
     define: {
       timestamps: true,
       underscored: true,
-    },
-    dialectOptions: {
-      // استخدام مسار PostgreSQL المحدد في ملف .env
-      bin: process.env.POSTGRES_PATH
     }
   };
 
@@ -108,15 +51,7 @@ if (process.env.DATABASE_URL) {
     config.database,
     config.username,
     config.password,
-    {
-      ...config,
-      dialectOptions: {
-        // Fix for notifications table not found
-        useUTC: false,
-        // استخدام مسار PostgreSQL المحدد في ملف .env
-        bin: process.env.PG_BIN_PATH
-      }
-    }
+    config
   );
 }
 
