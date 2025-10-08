@@ -43,9 +43,18 @@ process.env.NODE_ENV = 'development';
 
 // إنشاء اتصال سيكوالايز مستقل وتعريف نموذج User فقط لتجنب مزامنة جميع النماذج
 const Sequelize = require('sequelize');
+// تفعيل SSL تلقائياً إذا كنا نتصل بمضيف سحابي (مثل Railway)
+const dbUrl = process.env.DATABASE_URL || '';
+const shouldUseSSL = /railway|rlwy|proxy\.rlwy\.net|amazonaws|heroku|cloud|render/i.test(dbUrl);
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
-  logging: false
+  logging: false,
+  dialectOptions: shouldUseSSL ? {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  } : {}
 });
 const defineUser = require('./src/models/user');
 const User = defineUser(sequelize, Sequelize.DataTypes);
@@ -59,29 +68,71 @@ async function ensureAdmin() {
     const hashed = await bcrypt.hash(rawPassword, 12);
 
     // محاولة التحديث أولاً باستخدام استعلامات SQL مباشرة لتفادي اختلاف أسماء الأعمدة
-    const [updateResult, updateMeta] = await sequelize.query(
-      'UPDATE users SET password = :password, is_active = TRUE WHERE username = :username',
-      { replacements: { password: hashed, username } }
-    );
+    let updated = false;
+    try {
+      const [, meta1] = await sequelize.query(
+        'UPDATE users SET password = :password, is_active = TRUE WHERE username = :username',
+        { replacements: { password: hashed, username } }
+      );
+      const rows = (meta1 && meta1.rowCount) || 0;
+      if (rows > 0) updated = true;
+    } catch (_) {
+      // تجاهل ونحاول بصيغة camelCase
+    }
 
-    const updatedRows = Array.isArray(updateMeta) ? updateMeta[1] : (updateMeta && updateMeta.rowCount) || 0;
-    if (updatedRows && updatedRows > 0) {
+    if (!updated) {
+      try {
+        const [, meta2] = await sequelize.query(
+          'UPDATE users SET password = :password, "isActive" = TRUE WHERE username = :username',
+          { replacements: { password: hashed, username } }
+        );
+        const rows2 = (meta2 && meta2.rowCount) || 0;
+        if (rows2 > 0) updated = true;
+      } catch (_) {
+        // تجاهل
+      }
+    }
+
+    if (updated) {
       console.log('✅ تم تحديث كلمة مرور مستخدم admin وتفعيله');
     } else {
       const { v4: uuidv4 } = require('uuid');
-      await sequelize.query(
-        'INSERT INTO users (id, username, email, password, full_name, role, is_active) VALUES (:id, :username, :email, :password, :full_name, :role, TRUE)',
-        {
-          replacements: {
-            id: uuidv4(),
-            username,
-            email: 'admin@example.com',
-            password: hashed,
-            full_name: 'Admin',
-            role: 'admin',
+      // نحاول الإدراج أولاً بصيغة snake_case، ثم نfallback إلى camelCase
+      let inserted = false;
+      try {
+        await sequelize.query(
+          'INSERT INTO users (id, username, email, password, full_name, role, is_active, created_at, updated_at) VALUES (:id, :username, :email, :password, :full_name, :role, TRUE, NOW(), NOW())',
+          {
+            replacements: {
+              id: uuidv4(),
+              username,
+              email: 'admin@example.com',
+              password: hashed,
+              full_name: 'Admin',
+              role: 'admin',
+            }
           }
-        }
-      );
+        );
+        inserted = true;
+      } catch (_) {
+        // نحاول بصيغة camelCase مع أعمدة مقتبسة
+      }
+
+      if (!inserted) {
+        await sequelize.query(
+          'INSERT INTO users (id, username, email, password, "fullName", role, "isActive", "createdAt", "updatedAt") VALUES (:id, :username, :email, :password, :fullName, :role, TRUE, NOW(), NOW())',
+          {
+            replacements: {
+              id: uuidv4(),
+              username,
+              email: 'admin@example.com',
+              password: hashed,
+              fullName: 'Admin',
+              role: 'admin',
+            }
+          }
+        );
+      }
       console.log('✅ تم إنشاء مستخدم admin جديد');
     }
 
