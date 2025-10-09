@@ -1,4 +1,34 @@
 require('dotenv').config({ override: true });
+const crypto = require('crypto');
+
+// Ensure JWT secrets are present to avoid runtime errors in auth
+(() => {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!process.env.JWT_SECRET) {
+    const fallback = crypto.randomBytes(32).toString('hex');
+    process.env.JWT_SECRET = fallback;
+    console.error(
+      '[WARN] JWT_SECRET is missing. A temporary secret was generated.\n' +
+      '       Set a persistent `JWT_SECRET` in your environment (Railway → Variables).'
+    );
+    if (isProd) {
+      console.error('       Using a generated secret in production is NOT recommended.');
+    }
+  }
+
+  if (!process.env.JWT_REFRESH_SECRET) {
+    const fallbackRefresh = crypto.randomBytes(32).toString('hex');
+    process.env.JWT_REFRESH_SECRET = fallbackRefresh;
+    console.error(
+      '[WARN] JWT_REFRESH_SECRET is missing. A temporary secret was generated.\n' +
+      '       Set a persistent `JWT_REFRESH_SECRET` in your environment (Railway → Variables).'
+    );
+    if (isProd) {
+      console.error('       Using a generated refresh secret in production is NOT recommended.');
+    }
+  }
+})();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
