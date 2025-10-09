@@ -100,8 +100,8 @@ app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD
 // Rate limiting
 const isProduction = process.env.NODE_ENV === 'production';
 const limiter = rateLimit({
-  windowMs: process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX || 100, // Limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100, // Limit each IP to N requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   // Do not count health checks towards the limit
@@ -109,7 +109,8 @@ const limiter = rateLimit({
 });
 
 if (isProduction) {
-  app.use(limiter);
+  // Scope rate limiting to API routes only to avoid throttling static assets
+  app.use('/api', limiter);
 } else {
   console.log('Rate limiter disabled in development');
 }
