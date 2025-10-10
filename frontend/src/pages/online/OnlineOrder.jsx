@@ -78,27 +78,32 @@ const placeholderImage = `data:image/svg+xml;utf8,
 
 // Helper to build a usable image URL for products
 const getProductImageUrl = (product) => {
-  // Prefer database field image_url
+  // نُفضل الحقل image_url من قاعدة البيانات
   const raw = product?.image_url || product?.image || product?.imageUrl || '';
   const img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
-  // Absolute URL
-  if (/^https?:\/\//i.test(img)) return img;
-
-  // استخدام مسار نسبي بدلاً من مسار مطلق لتجنب مشاكل CORS
-  // This avoids CORS issues by using the same origin
-  if (img.startsWith('/uploads/')) return `http://localhost:3005/api/v1${img}`;
-  if (img.startsWith('uploads/')) return `http://localhost:3005/api/v1/${img}`;
-
-  // Likely a filename
-  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    return `http://localhost:3005/api/v1/uploads/${img}`;
+  // إذا كان الرابط مطلقًا
+  if (/^https?:\/\//i.test(img)) {
+    try {
+      const url = new URL(img);
+      // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
+      if (url.origin === window.location.origin) return img;
+      if (url.pathname.startsWith('/uploads/')) return `${window.location.origin}${url.pathname}`;
+      // روابط خارجية ستتعارض غالبًا مع سياسة CSP الحالية، فنعرض صورة بديلة
+      return placeholderImage;
+    } catch {
+      // لو فشل التحليل نُكمل المعالجة أدناه
+    }
   }
-  
-  // If the image path doesn't match any of the above patterns, try to construct a valid path
-  if (img) {
-    return `http://localhost:3005/api/v1/uploads/${img}`;
+
+  // استخدام مسار نسبي بنفس الأصل لتجنب مشاكل CORS و CSP
+  if (img.startsWith('/uploads/')) return img; // نفس الأصل
+  if (img.startsWith('uploads/')) return `/${img}`;
+
+  // على الأرجح اسم ملف صورة
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
+    return `/uploads/${img}`;
   }
 
   return placeholderImage;
