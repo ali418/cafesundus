@@ -89,7 +89,7 @@ const getProductImageUrl = (product) => {
       const url = new URL(img);
       // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
       if (url.origin === window.location.origin) return img;
-      if (url.pathname.startsWith('/uploads/')) return `${window.location.origin}${url.pathname}`;
+      if (url.pathname.startsWith('/uploads/')) return url.pathname;
       // روابط خارجية ستتعارض غالبًا مع سياسة CSP الحالية، فنعرض صورة بديلة
       return placeholderImage;
     } catch {

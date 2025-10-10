@@ -78,7 +78,18 @@ const getProductImageUrl = (product) => {
   if (!img) return placeholderImage;
 
   // Absolute URL
-  if (/^https?:\/\//i.test(img)) return img;
+  if (/^https?:\/\//i.test(img)) {
+    try {
+      const url = new URL(img);
+      // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
+      if (url.origin === window.location.origin) return img;
+      if (url.pathname.startsWith('/uploads/')) return url.pathname;
+      // روابط خارجية ستتعارض غالبًا مع سياسة CSP الحالية، فنعرض صورة بديلة
+      return placeholderImage;
+    } catch {
+      // لو فشل التحليل نُكمل المعالجة أدناه
+    }
+  }
 
   // Normalize uploads path and use relative URL (works with proxy in dev and backend in prod)
   if (img.startsWith('/uploads/')) return img;
