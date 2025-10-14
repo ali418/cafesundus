@@ -97,7 +97,9 @@ const getProductImageUrl = (product) => {
 
   // Likely a filename
   if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    return `/uploads/${img}`;
+    // في بيئة الإنتاج، نحتاج إلى استخدام المسار الكامل للصورة
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/uploads/${img}`;
   }
 
   return placeholderImage;
