@@ -520,26 +520,45 @@ const OnlineOrder = () => {
   // Check if customer exists and create if not
   const checkAndCreateCustomer = async (customerData) => {
     try {
+      // Validate customer data
+      if (!customerData.phone && !customerData.email) {
+        console.error('Cannot search for customer: missing both phone and email');
+        return null;
+      }
+
       // Check if customer exists by phone or email
       const searchResults = await apiService.searchCustomers(customerData.phone || customerData.email);
       
       // If customer exists, return existing customer
       if (searchResults && searchResults.length > 0) {
         console.log('Customer already exists:', searchResults[0]);
-        return searchResults[0];
+        // Double check that the returned customer has a valid ID
+        if (searchResults[0] && searchResults[0].id) {
+          return searchResults[0];
+        } else {
+          console.error('Existing customer does not have a valid ID:', searchResults[0]);
+        }
       }
       
       // Create new customer if not found
+      console.log('Creating new customer with data:', customerData);
       const newCustomer = await apiService.createCustomer({
-        name: customerData.name,
-        phone: customerData.phone,
-        email: customerData.email,
-        address: customerData.address,
+        name: customerData.name || 'Guest',
+        phone: customerData.phone || '',
+        email: customerData.email || '',
+        address: customerData.address || '',
         source: 'online' // Mark as online customer
       });
       
       console.log('New customer created:', newCustomer);
-      return newCustomer;
+      
+      // Ensure we have a valid customer object with an id
+      if (newCustomer && newCustomer.id) {
+        return newCustomer;
+      } else {
+        console.error('Created customer does not have a valid ID:', newCustomer);
+        return null;
+      }
     } catch (error) {
       console.error('Error checking/creating customer:', error);
       // Continue with order even if customer creation fails
@@ -593,12 +612,20 @@ const OnlineOrder = () => {
           paymentMethod: customerInfo.paymentMethod,
           mobilePaymentProvider: customerInfo.mobilePaymentProvider
         },
-        customerId: customer?.id, // Link order to customer if created/found
         subtotal,
         tax,
         total,
         orderType: 'online'
       };
+      
+      // Only include customerId if we have a valid customer with id
+      // This is critical for the foreign key constraint
+      if (customer && customer.id) {
+        console.log('Adding valid customer ID to order:', customer.id);
+        orderData.customerId = customer.id;
+      } else {
+        console.log('No valid customer ID available, order will be created without customer reference');
+      }
       
       // Add order data to form
       formData.append('orderData', JSON.stringify(orderData));
