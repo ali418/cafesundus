@@ -5,6 +5,7 @@ import { selectCurrency, selectStoreSettings } from '../../redux/slices/settings
 import apiService from '../../api/apiService';
 import { toast } from 'react-toastify';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 import {
   Box,
   Grid,
@@ -133,8 +134,8 @@ const OnlineOrder = () => {
   const [selectedCategory, setSelectedCategory] = useState(1); // Default to 'All'
   const [filteredProducts, setFilteredProducts] = useState([]);
   
-  // State for customer information
-  const [customerInfo, setCustomerInfo] = useState({
+  // State for customer information with localStorage persistence
+  const [customerInfo, setCustomerInfo] = useLocalStorage('customerInfo', {
     name: '',
     phone: '',
     email: '',
@@ -516,6 +517,36 @@ const OnlineOrder = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  // Check if customer exists and create if not
+  const checkAndCreateCustomer = async (customerData) => {
+    try {
+      // Check if customer exists by phone or email
+      const searchResults = await apiService.searchCustomers(customerData.phone || customerData.email);
+      
+      // If customer exists, return existing customer
+      if (searchResults && searchResults.length > 0) {
+        console.log('Customer already exists:', searchResults[0]);
+        return searchResults[0];
+      }
+      
+      // Create new customer if not found
+      const newCustomer = await apiService.createCustomer({
+        name: customerData.name,
+        phone: customerData.phone,
+        email: customerData.email,
+        address: customerData.address,
+        source: 'online' // Mark as online customer
+      });
+      
+      console.log('New customer created:', newCustomer);
+      return newCustomer;
+    } catch (error) {
+      console.error('Error checking/creating customer:', error);
+      // Continue with order even if customer creation fails
+      return null;
+    }
+  };
+
   // Submit order
   const submitOrder = async () => {
     try {
@@ -536,6 +567,14 @@ const OnlineOrder = () => {
         }
       }
       
+      // Check if customer exists or create new customer
+      const customer = await checkAndCreateCustomer({
+        name: customerInfo.name,
+        phone: customerInfo.phone,
+        email: customerInfo.email,
+        address: customerInfo.address
+      });
+      
       // Create form data for file upload
       const formData = new FormData();
       
@@ -554,6 +593,7 @@ const OnlineOrder = () => {
           paymentMethod: customerInfo.paymentMethod,
           mobilePaymentProvider: customerInfo.mobilePaymentProvider
         },
+        customerId: customer?.id, // Link order to customer if created/found
         subtotal,
         tax,
         total,

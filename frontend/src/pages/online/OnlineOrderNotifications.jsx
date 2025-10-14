@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -38,11 +38,15 @@ import {
   Receipt as ReceiptIcon,
   Image as ImageIcon,
   Refresh as RefreshIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  VolumeUp as VolumeUpIcon,
+  VolumeOff as VolumeOffIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import apiService from '../../api/apiService';
 import { selectCurrency } from '../../redux/slices/settingsSlice';
+// Import notification sound
+import notificationSound from '../../assets/sounds/notification.mp3';
 
 const OnlineOrderNotifications = () => {
   const { t } = useTranslation(['online', 'common']);
@@ -53,6 +57,11 @@ const OnlineOrderNotifications = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [previousOrderCount, setPreviousOrderCount] = useState(0);
+  
+  // Ref for notification sound
+  const audioRef = useRef(new Audio(notificationSound));
   
   // State for pagination
   const [page, setPage] = useState(0);
@@ -128,6 +137,17 @@ const OnlineOrderNotifications = () => {
     
     return () => clearInterval(intervalId);
   }, [page, rowsPerPage]);
+  
+  // Play notification sound when new orders arrive
+  useEffect(() => {
+    if (orders.length > previousOrderCount && soundEnabled && previousOrderCount > 0) {
+      audioRef.current.play().catch(error => {
+        console.error('Error playing notification sound:', error);
+      });
+      toast.info('تم استلام طلب جديد!');
+    }
+    setPreviousOrderCount(orders.length);
+  }, [orders.length, soundEnabled]);
   
   // Handle page change
   const handleChangePage = (event, newPage) => {
@@ -519,6 +539,20 @@ const OnlineOrderNotifications = () => {
     );
   };
   
+  // Toggle sound function
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+    localStorage.setItem('notificationSoundEnabled', !soundEnabled);
+  };
+
+  // Load sound preference from localStorage
+  useEffect(() => {
+    const savedSoundPreference = localStorage.getItem('notificationSoundEnabled');
+    if (savedSoundPreference !== null) {
+      setSoundEnabled(savedSoundPreference === 'true');
+    }
+  }, []);
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -526,6 +560,11 @@ const OnlineOrderNotifications = () => {
           {t('online:onlineOrderNotifications', 'إشعارات الطلبات الأونلاين')}
         </Typography>
         <Box>
+          <Tooltip title={soundEnabled ? t('online:disableNotificationSound', 'تعطيل صوت الإشعارات') : t('online:enableNotificationSound', 'تفعيل صوت الإشعارات')}>
+            <IconButton onClick={toggleSound} color={soundEnabled ? 'primary' : 'default'} sx={{ mr: 1 }}>
+              {soundEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
+            </IconButton>
+          </Tooltip>
           <Button
             variant="contained"
             color="primary"
