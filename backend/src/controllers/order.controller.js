@@ -344,45 +344,61 @@ exports.createOrderWithImage = async (req, res, next) => {
           message: 'Customer not found',
         });
       }
-    } else if (customerName && customerPhone) {
-      // Check if customer already exists by email or phone
-      if (customerEmail) {
-        // First try to find by email
-        customer = await Customer.findOne({
-          where: { email: customerEmail },
-          transaction
-        });
-      }
-      
-      // If not found by email, try to find by phone
-      if (!customer && customerPhone) {
-        customer = await Customer.findOne({
-          where: { phone: customerPhone },
-          transaction
-        });
-      }
-      
-      // If customer exists, use that customer
-      if (customer) {
-        customerId = customer.id;
-        
-        // Update customer information if needed
-        if (customer.name !== customerName || 
-            (deliveryAddress && customer.address !== deliveryAddress)) {
-          await customer.update({
-            name: customerName,
-            address: deliveryAddress || customer.address
-          }, { transaction });
-        }
-      } else {
-        // If customer doesn't exist, create a new one
-        customer = await Customer.create({
-          name: customerName,
-          phone: customerPhone,
+    } else if (customerName || customerPhone || customerEmail) {
+      try {
+        // استخدام خدمة البحث عن العميل أو إنشائه
+        const customerData = {
+          name: customerName || 'Walk-in Customer',
           email: customerEmail || null,
-          address: deliveryAddress || null,
-        }, { transaction });
-        customerId = customer.id;
+          phone: customerPhone || null,
+          address: deliveryAddress || null
+        };
+        
+        // البحث عن العميل أو إنشائه باستخدام المنطق المشترك
+        const { Op } = Sequelize;
+        
+        // البحث عن العميل بالبريد الإلكتروني أو رقم الهاتف
+        if (customerEmail || customerPhone) {
+          const whereClause = {
+            [Op.or]: [
+              customerEmail ? { email: customerEmail } : null,
+              customerPhone ? { phone: customerPhone } : null
+            ].filter(Boolean)
+          };
+          
+          customer = await Customer.findOne({
+            where: whereClause,
+            transaction
+          });
+        }
+        
+        // إذا وجدنا العميل، نقوم بتحديث بياناته إذا لزم الأمر
+        if (customer) {
+          customerId = customer.id;
+          
+          // تحديث معلومات العميل إذا لزم الأمر
+          const updates = {};
+          if (customerName && !customer.name) updates.name = customerName;
+          if (customerEmail && !customer.email) updates.email = customerEmail;
+          if (customerPhone && !customer.phone) updates.phone = customerPhone;
+          if (deliveryAddress && !customer.address) updates.address = deliveryAddress;
+          
+          if (Object.keys(updates).length > 0) {
+            await customer.update(updates, { transaction });
+          }
+        } else {
+          // إذا لم يوجد العميل، نقوم بإنشاء عميل جديد
+          customer = await Customer.create({
+            name: customerName || 'Walk-in Customer',
+            phone: customerPhone || null,
+            email: customerEmail || null,
+            address: deliveryAddress || null,
+          }, { transaction });
+          customerId = customer.id;
+        }
+      } catch (customerError) {
+        console.error('Error handling customer data:', customerError);
+        // نستمر في إنشاء الطلب حتى لو فشلت عملية العميل
       }
     }
     

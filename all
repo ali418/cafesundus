@@ -1,0 +1,296 @@
+
+
+* Add a backend endpoint `POST /api/v1/customers/find-or-create` that:
+  — checks by `email` **or** `phone`,
+  — returns existing customer or creates a new one,
+  — returns the `customer.id` plus customer fields.
+* Update order creation flow (call this endpoint first) so orders use a valid `customer_id` (or `null`).
+* Frontend: call the new endpoint before submitting an order, store returned customer info in `localStorage`, and autofill the order form on page load.
+
+Apply the snippets below into your project. I’ll mark where to paste each file / change.
+
+---
+
+## 1) Backend — **New** customers controller (Sequelize)
+
+Create file: `backend/src/controllers/customers.controller.js`
+
+```js
+// backend/src/controllers/customers.controller.js
+const { Op } = require('sequelize');
+const { Customer } = require('../models'); // adjust path to your models
+
+/**
+ * POST /api/v1/customers/find-or-create
+ * body: { name, email, phone }
+ * returns: { id, name, email, phone, createdAt, updatedAt }
+ */
+exports.findOrCreateCustomer = async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+
+    if (!email && !phone) {
+      return res.status(400).json({ message: 'Email or phone is required' });
+    }
+
+    // find by email OR phone
+    let customer = await Customer.findOne({
+      where: {
+        [Op.or]: [
+          email ? { email } : null,
+          phone ? { phone } : null
+        ].filter(Boolean)
+      }
+    });
+
+    if (!customer) {
+      customer = await Customer.create({
+        name: name || 'Walk-in Customer',
+        email: email || null,
+        phone: phone || null
+      });
+    } else {
+      // optional: update name/email/phone if empty/changed
+      const changes = {};
+      if (name && !customer.name) changes.name = name;
+      if (email && !customer.email) changes.email = email;
+      if (phone && !customer.phone) changes.phone = phone;
+      if (Object.keys(changes).length) {
+        await customer.update(changes);
+      }
+    }
+
+    return res.json({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt
+    });
+  } catch (err) {
+    console.error('findOrCreateCustomer error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+```
+
+---
+
+## 2) Backend — register route
+
+Create file: `backend/src/routes/customers.route.js`
+
+```js
+// backend/src/routes/customers.route.js
+const express = require('express');
+const router = express.Router();
+const customersController = require('../controllers/customers.controller');
+
+router.post('/find-or-create', customersController.findOrCreateCustomer);
+
+module.exports = router;
+```
+
+Then in your main server router registration (e.g. in `backend/src/index.js` or wherever routes are mounted), add:
+
+```js
+// in your server boot file (backend/src/index.js)
+const customersRoute = require('./routes/customers.route');
+app.use('/api/v1/customers', customersRoute);
+```
+
+Place this before the orders route so customers are available when orders are created.
+
+---
+
+## 3) Backend — update orders creation (call find-or-create)
+
+Find the controller handling `/api/v1/orders/with-image` or order creation and modify to call customers endpoint logic directly (or reuse function). If your `orders.controller.js` builds an order from request body, wrap with customer resolution:
+
+Example patch inside order creation flow (pseudo-location: `backend/src/controllers/orders.controller.js`):
+
+```js
+// inside your order creation handler
+const axios = require('axios'); // if you prefer internal service call, you can call the model directly (better)
+const { Customer } = require('../models'); // use models directly to avoid HTTP call
+
+// before creating the sale/order:
+let customerId = null;
+if (req.body.customer) {
+  const { name, email, phone } = req.body.customer;
+
+  // Try to find or create using the same logic
+  let customer = await Customer.findOne({
+    where: {
+      [Op.or]: [
+        email ? { email } : null,
+        phone ? { phone } : null
+      ].filter(Boolean)
+    }
+  });
+
+  if (!customer) {
+    customer = await Customer.create({
+      name: name || 'Walk-in Customer',
+      email: email || null,
+      phone: phone || null
+    });
+  } else {
+    // optional update
+    const changes = {};
+    if (name && !customer.name) changes.name = name;
+    if (email && !customer.email) changes.email = email;
+    if (phone && !customer.phone) changes.phone = phone;
+    if (Object.keys(changes).length) await customer.update(changes);
+  }
+
+  customerId = customer.id;
+}
+
+// when creating sale/order ensure customer_id is either valid UUID or null
+const saleData = {
+  ... // your existing sale fields
+  customer_id: customerId || null,
+};
+
+// create order (example)
+const sale = await Sale.create(saleData);
+```
+
+> **Note:** Prefer using the models inside the same process rather than calling your own endpoint via HTTP. I used `Customer` model directly for performance and atomicity.
+
+---
+
+## 4) Frontend — Create helper to find-or-create customer and persist locally
+
+Edit your POS/online-order page submission logic. Example: `frontend/src/hooks/useOrder.js` or where you submit orders.
+
+Add helper function:
+
+```js
+// frontend/src/api/customerApi.js
+import axios from 'axios';
+
+export async function findOrCreateCustomer({ name, email, phone }) {
+  try {
+    const resp = await axios.post('/api/v1/customers/find-or-create', { name, email, phone });
+    return resp.data; // { id, name, email, phone }
+  } catch (err) {
+    console.error('findOrCreateCustomer error', err);
+    throw err;
+  }
+}
+```
+
+Then modify order submit flow (pseudo code):
+
+```js
+// frontend/src/pages/PosPage.jsx (or wherever your submit handler is)
+import { findOrCreateCustomer } from '../api/customerApi';
+
+async function submitOrder(payload) {
+  try {
+    // payload must include customer info from form
+    const customerInfo = {
+      name: payload.customerName,
+      email: payload.customerEmail,
+      phone: payload.customerPhone
+    };
+
+    // Call backend to get/create customer
+    const customer = await findOrCreateCustomer(customerInfo);
+
+    // Save customer locally for next time
+    localStorage.setItem('cafesundus_customer', JSON.stringify(customer));
+
+    // attach customer id to order payload
+    payload.customer_id = customer.id;
+
+    // Now submit the order (including image etc.)
+    const orderResp = await axios.post('/api/v1/orders/with-image', payload, {
+      headers: { 'Content-Type': 'multipart/form-data' } // if sending files
+    });
+
+    // handle success...
+  } catch (err) {
+    // handle error
+    console.error('Error submitting order', err);
+    // show user-friendly message
+  }
+}
+```
+
+---
+
+## 5) Frontend — Autofill stored customer on page load
+
+On your POS/online-order page mounting:
+
+```js
+// in component mount
+useEffect(() => {
+  const saved = localStorage.getItem('cafesundus_customer');
+  if (saved) {
+    const customer = JSON.parse(saved);
+    setCustomerName(customer.name || '');
+    setCustomerEmail(customer.email || '');
+    setCustomerPhone(customer.phone || '');
+    // keep customer id hidden if you need it
+    setCustomerId(customer.id || null);
+  }
+}, []);
+```
+
+---
+
+## 6) Validation & UX details
+
+* On the form, require at least one of `email` or `phone` before proceeding. If both missing, show a friendly message: “Please provide a phone number or email.”
+* Show a small spinner during `findOrCreateCustomer` so the user knows we are checking/creating.
+* If backend returns existing customer, you may show “Welcome back, <name>” briefly.
+
+---
+
+## 7) SQL: (No schema change needed)
+
+You already allowed `customer_id` to be `NULL`. This solution creates customer records when needed — no change required in DB schema.
+
+---
+
+## 8) Full Integration checklist (do these steps in order)
+
+1. Add `backend/src/controllers/customers.controller.js` and `backend/src/routes/customers.route.js`.
+2. Register customers route in server boot file (`app.use('/api/v1/customers', customersRoute)`).
+3. Modify orders controller to perform `find-or-create` logic before creating sale (use `Customer` model directly).
+4. Add frontend API helper `findOrCreateCustomer` and change order submit to call it first; store returned customer in `localStorage`.
+5. Autofill customer fields on POS page using `localStorage`.
+6. Commit all changes and push to GitHub.
+7. Redeploy via Railway (it will auto-deploy on push). Monitor logs for errors.
+8. Test flow:
+
+   * First-time user: fill name, email/phone, submit order — should create customer and order.
+   * Second-time user: open page again — fields autofill and next order should reuse same customer record.
+
+---
+
+## 9) Example error handling (be defensive)
+
+* If `find-or-create` fails, either block order submission or allow order with `customer_id = null` (your choice). For best UX, let the order continue with `customer_id = null` but show a warning: “Could not save customer — order recorded as guest.”
+
+---
+
+## 10) Commit & Deploy instructions
+
+```bash
+# in repo root
+git checkout -b feat/customer-find-or-create
+# add files/edits
+git add backend/src/controllers/customers.controller.js backend/src/routes/customers.route.js \
+        backend/src/controllers/orders.controller.js frontend/src/api/customerApi.js \
+        frontend/src/pages/PosPage.jsx
+git commit -m "feat: add find-or-create customer flow and persist to localStorage before order"
+git push origin feat/customer-find-or-create
+# create PR -> merge to main -> Railway will redeploy automatically
+```
+

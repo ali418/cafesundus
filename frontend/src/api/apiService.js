@@ -134,6 +134,17 @@ const apiService = {
     }
   },
   
+  // Customer API
+  findOrCreateCustomer: async (customerData) => {
+    try {
+      const response = await axiosInstance.post('/customers/api/find-or-create', customerData);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+  
   // Online Orders
   createOrder: async (orderData) => {
     try {

@@ -145,6 +145,25 @@ const OnlineOrder = () => {
     transactionImage: null, // For payment receipt upload
   });
   
+  // ملء تلقائي لبيانات العميل من localStorage عند تحميل الصفحة
+  useEffect(() => {
+    // تحقق من وجود بيانات العميل في localStorage
+    const savedCustomerInfo = localStorage.getItem('customerInfo');
+    if (savedCustomerInfo) {
+      try {
+        const parsedInfo = JSON.parse(savedCustomerInfo);
+        // تحديث نموذج بيانات العميل
+        setCustomerInfo(prevInfo => ({
+          ...prevInfo,
+          ...parsedInfo
+        }));
+        console.log('تم استرجاع بيانات العميل من التخزين المحلي:', parsedInfo);
+      } catch (error) {
+        console.error('خطأ في تحليل بيانات العميل المخزنة:', error);
+      }
+    }
+  }, []);
+  
   // State for location loading
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
@@ -526,23 +545,9 @@ const OnlineOrder = () => {
         return null;
       }
 
-      // Check if customer exists by phone or email
-      const searchResults = await apiService.searchCustomers(customerData.phone || customerData.email);
-      
-      // If customer exists, return existing customer
-      if (searchResults && searchResults.length > 0) {
-        console.log('Customer already exists:', searchResults[0]);
-        // Double check that the returned customer has a valid ID
-        if (searchResults[0] && searchResults[0].id) {
-          return searchResults[0];
-        } else {
-          console.error('Existing customer does not have a valid ID:', searchResults[0]);
-        }
-      }
-      
-      // Create new customer if not found
-      console.log('Creating new customer with data:', customerData);
-      const newCustomer = await apiService.createCustomer({
+      // استخدام API الجديد للبحث عن العميل أو إنشائه
+      console.log('Finding or creating customer with data:', customerData);
+      const customer = await apiService.findOrCreateCustomer({
         name: customerData.name || 'Guest',
         phone: customerData.phone || '',
         email: customerData.email || '',
@@ -550,17 +555,26 @@ const OnlineOrder = () => {
         source: 'online' // Mark as online customer
       });
       
-      console.log('New customer created:', newCustomer);
-      
-      // Ensure we have a valid customer object with an id
-      if (newCustomer && newCustomer.id) {
-        return newCustomer;
+      // حفظ بيانات العميل في localStorage للاستخدام المستقبلي
+      if (customer && customer.id) {
+        console.log('Found or created customer:', customer);
+        
+        // تحديث بيانات العميل في localStorage
+        setCustomerInfo(prevInfo => ({
+          ...prevInfo,
+          name: customer.name || prevInfo.name,
+          email: customer.email || prevInfo.email,
+          phone: customer.phone || prevInfo.phone,
+          address: customer.address || prevInfo.address
+        }));
+        
+        return customer;
       } else {
-        console.error('Created customer does not have a valid ID:', newCustomer);
+        console.error('Failed to find or create customer, API returned:', customer);
         return null;
       }
     } catch (error) {
-      console.error('Error checking/creating customer:', error);
+      console.error('Error in checkAndCreateCustomer:', error);
       // Continue with order even if customer creation fails
       return null;
     }
