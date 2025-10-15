@@ -404,21 +404,37 @@ exports.createOrderWithImage = async (req, res, next) => {
     
     // Process transaction image if provided
     let transactionImagePath = null;
-    if (req.files && req.files.transactionImage) {
-      const transactionImage = req.files.transactionImage;
-      const fileExt = path.extname(transactionImage.name);
-      const fileName = `transaction_${uuidv4()}${fileExt}`;
-      const uploadPath = path.join(uploadDir, fileName);
-      
-      // Move the file to the upload directory
-      await transactionImage.mv(uploadPath);
-      transactionImagePath = fileName;
-    } else if (paymentMethod === 'mobile_payment' || paymentMethod === 'online') {
-      // Require receipt image for mobile or online payments
+    try {
+      if (req.files && req.files.transactionImage) {
+        const transactionImage = req.files.transactionImage;
+        const fileExt = path.extname(transactionImage.name);
+        const fileName = `transaction_${uuidv4()}${fileExt}`;
+        
+        // Ensure uploadDir exists
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        const uploadPath = path.join(uploadDir, fileName);
+        
+        // Move the file to the upload directory
+        await transactionImage.mv(uploadPath);
+        transactionImagePath = fileName;
+      } else if (paymentMethod === 'mobile_payment' || paymentMethod === 'online') {
+        // Require receipt image for mobile or online payments
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف أو الإنترنت',
+        });
+      }
+    } catch (imageError) {
+      console.error('Error processing transaction image:', imageError);
       await transaction.rollback();
-      return res.status(400).json({
+      return res.status(500).json({
         success: false,
-        message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف أو الإنترنت',
+        message: 'حدث خطأ أثناء معالجة صورة المعاملة',
+        error: imageError.message
       });
     }
     
