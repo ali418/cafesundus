@@ -483,24 +483,65 @@ exports.createOrderWithImage = async (req, res, next) => {
 
     // Validate required fields - make this validation less strict for online orders
     if (!items) {
-      // Try to extract items from orderData if available
-      if (orderData && orderData.items && Array.isArray(orderData.items)) {
-        items = orderData.items;
-      } else if (orderData && orderData.orderItems && Array.isArray(orderData.orderItems)) {
-        items = orderData.orderItems;
+      console.log('Items not found directly, attempting to extract from request data');
+      
+      // Try to extract items from various possible locations in the request data
+      if (orderData && orderData.items) {
+        if (typeof orderData.items === 'string') {
+          try {
+            items = JSON.parse(orderData.items);
+            console.log('Successfully parsed items from string:', items);
+          } catch (parseError) {
+            console.error('Failed to parse items string:', parseError);
+          }
+        } else if (Array.isArray(orderData.items)) {
+          items = orderData.items;
+          console.log('Found items array in orderData.items');
+        }
+      } else if (orderData && orderData.orderItems) {
+        if (typeof orderData.orderItems === 'string') {
+          try {
+            items = JSON.parse(orderData.orderItems);
+            console.log('Successfully parsed orderItems from string:', items);
+          } catch (parseError) {
+            console.error('Failed to parse orderItems string:', parseError);
+          }
+        } else if (Array.isArray(orderData.orderItems)) {
+          items = orderData.orderItems;
+          console.log('Found items array in orderData.orderItems');
+        }
+      } else if (req.body.items) {
+        if (typeof req.body.items === 'string') {
+          try {
+            items = JSON.parse(req.body.items);
+            console.log('Successfully parsed items from req.body.items string');
+          } catch (parseError) {
+            console.error('Failed to parse req.body.items string:', parseError);
+          }
+        } else if (Array.isArray(req.body.items)) {
+          items = req.body.items;
+          console.log('Found items array in req.body.items');
+        }
       }
+      
+      // Log what we found or didn't find
+      console.log('Items extraction result:', items ? `Found ${items.length} items` : 'No items found');
     }
     
     // Final validation after attempting to extract items
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.error('Order validation failed: No items provided', { 
-        body: req.body, 
-        orderData: orderData 
+        body: JSON.stringify(req.body).substring(0, 500), // Limit output size
+        orderData: orderData ? JSON.stringify(orderData).substring(0, 500) : null // Limit output size
       });
       await transaction.rollback();
       return res.status(400).json({
         success: false,
         message: 'Order must contain at least one item',
+        debug: {
+          receivedFields: Object.keys(req.body),
+          orderDataFields: orderData ? Object.keys(orderData) : null
+        }
       });
     }
 
