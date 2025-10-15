@@ -17,11 +17,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin.
 console.log('Using backend URL:', BACKEND_URL);
 
 // Create axios instance with retry logic
+// ملاحظة مهمة: لا نضبط Content-Type افتراضياً هنا.
+// عند إرسال FormData، يجب ترك المتصفح يحدد multipart boundary تلقائياً.
 const axiosInstance = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add request interceptor for authentication and logging
