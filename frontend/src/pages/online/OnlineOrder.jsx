@@ -645,12 +645,24 @@ const OnlineOrder = () => {
       
       // Add order data to form
       formData.append('orderData', JSON.stringify(orderData));
-      
+
       // Add transaction image if available
       if (customerInfo.transactionImage) {
         formData.append('transactionImage', customerInfo.transactionImage);
       }
-      
+
+      // Debug: print request payload before sending
+      try {
+        console.log('Creating order with data:', {
+          customerId: orderData.customerId || null,
+          cartItems: orderData.items,
+          total,
+          image: customerInfo.transactionImage ? customerInfo.transactionImage.name : 'No image selected',
+        });
+      } catch (logErr) {
+        // ignore logging errors
+      }
+
       // Submit order to API
       const response = await apiService.createOrderWithImage(formData);
       
@@ -661,8 +673,23 @@ const OnlineOrder = () => {
       toast.success(t('orderPlacedSuccessfully'));
       
     } catch (error) {
-      console.error('Error submitting order:', error);
-      toast.error(t('errorPlacingOrder'));
+      console.error('❌ Error creating order with image:', error);
+      // Print server response details if available
+      if (error.response) {
+        console.error('🔎 Server responded with status:', error.response.status);
+        console.error('📩 Server response data:', error.response.data);
+        const backendMessage = error.response.data?.message || error.response.data?.error || error.message;
+        if (backendMessage) {
+          console.error('💬 Backend message:', backendMessage);
+        }
+        toast.error(backendMessage || t('errorPlacingOrder'));
+      } else if (error.request) {
+        console.error('📡 No response received from server:', error.request);
+        toast.error(t('noServerResponse', 'لم يتم استلام رد من الخادم'));
+      } else {
+        console.error('⚙️ Error setting up request:', error.message);
+        toast.error(error.message || t('errorPlacingOrder'));
+      }
     } finally {
       setOrderSubmitting(false);
     }

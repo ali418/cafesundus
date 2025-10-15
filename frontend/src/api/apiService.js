@@ -159,15 +159,52 @@ const apiService = {
   
   createOrderWithImage: async (formData) => {
     try {
+      // Debug: print formData keys and brief values
+      try {
+        const preview = {};
+        for (const [key, value] of formData.entries()) {
+          if (key === 'transactionImage' && value && typeof value === 'object') {
+            preview[key] = value.name || 'file';
+          } else if (key === 'orderData') {
+            // Try to parse to show structure
+            try {
+              const parsed = JSON.parse(value);
+              // Avoid logging full items array for huge payloads
+              preview[key] = {
+                ...parsed,
+                items: Array.isArray(parsed.items) ? `items[${parsed.items.length}]` : parsed.items,
+              };
+            } catch {
+              preview[key] = typeof value === 'string' ? `${value.slice(0, 200)}...` : 'unprintable';
+            }
+          } else {
+            preview[key] = typeof value === 'string' ? value : 'binary';
+          }
+        }
+        console.log('createOrderWithImage → sending FormData:', preview);
+      } catch (_) {
+        // ignore logging errors
+      }
+
       const response = await axiosInstance.post('/orders/with-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      console.log('✅ Order created successfully:', response.data);
       return response.data.data || response.data;
     } catch (error) {
-      console.error('Error creating order with image:', error);
-      error.userMessage = error.friendlyMessage || 'Failed to create order. Please try again later.';
+      console.error('❌ Error creating order with image:', error);
+      if (error.response) {
+        console.error('🔎 Server responded with status:', error.response.status);
+        console.error('📩 Server response data:', error.response.data);
+      } else if (error.request) {
+        console.error('📡 No response received from server:', error.request);
+      } else {
+        console.error('⚙️ Error setting up request:', error.message);
+      }
+      const backendMessage = error.response?.data?.message || error.friendlyMessage || error.message;
+      error.userMessage = backendMessage || 'Failed to create order. Please try again later.';
       throw error;
     }
   },
