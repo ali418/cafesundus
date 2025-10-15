@@ -302,6 +302,25 @@ exports.createOrderWithImage = async (req, res, next) => {
       }
     }
 
+    // Map snake_case fields from body if present (fallbacks)
+    {
+      const b = orderData || {};
+      customerName = customerName || b.customer_name || b.customerName || '';
+      customerPhone = customerPhone || b.customer_phone || b.customerPhone || '';
+      customerEmail = customerEmail || b.customer_email || b.customerEmail || '';
+      deliveryAddress = deliveryAddress || b.delivery_address || b.address || deliveryAddress || '';
+
+      subtotal = (typeof subtotal !== 'undefined' && subtotal !== null) ? subtotal : (typeof b.subtotal !== 'undefined' ? b.subtotal : subtotal);
+      taxAmount = (typeof taxAmount !== 'undefined' && taxAmount !== null) ? taxAmount : (typeof b.tax_amount !== 'undefined' ? b.tax_amount : (typeof b.tax !== 'undefined' ? b.tax : taxAmount));
+      discountAmount = (typeof discountAmount !== 'undefined' && discountAmount !== null) ? discountAmount : (typeof b.discount_amount !== 'undefined' ? b.discount_amount : (typeof b.discount !== 'undefined' ? b.discount : discountAmount));
+      totalAmount = (typeof totalAmount !== 'undefined' && totalAmount !== null) ? totalAmount : (typeof b.total_amount !== 'undefined' ? b.total_amount : (typeof b.total !== 'undefined' ? b.total : totalAmount));
+
+      paymentMethod = paymentMethod || b.payment_method || paymentMethod;
+      paymentStatus = paymentStatus || b.payment_status || paymentStatus;
+      notes = notes || b.notes || notes;
+      customerId = customerId || b.customer_id || b.customerId || customerId;
+    }
+
     // Compute numeric totals with fallbacks (accept tax/total from frontend if provided)
     const subtotalNum = Number.isFinite(parseFloat(subtotal))
       ? parseFloat(subtotal)
@@ -405,28 +424,38 @@ exports.createOrderWithImage = async (req, res, next) => {
     // Process transaction image if provided
     let transactionImagePath = null;
     try {
+      // If a file is uploaded via FormData
       if (req.files && req.files.transactionImage) {
         const transactionImage = req.files.transactionImage;
         const fileExt = path.extname(transactionImage.name);
         const fileName = `transaction_${uuidv4()}${fileExt}`;
-        
+
         // Ensure uploadDir exists
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
-        
+
         const uploadPath = path.join(uploadDir, fileName);
-        
+
         // Move the file to the upload directory
         await transactionImage.mv(uploadPath);
         transactionImagePath = fileName;
-      } else if (paymentMethod === 'mobile_payment' || paymentMethod === 'online') {
-        // Require receipt image for mobile or online payments
-        await transaction.rollback();
-        return res.status(400).json({
-          success: false,
-          message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف أو الإنترنت',
-        });
+      } else {
+        // Fallback: accept transaction_image string path from body
+        const providedImage = (orderData && (orderData.transaction_image || orderData.transactionImage)) || null;
+        if (providedImage && typeof providedImage === 'string') {
+          // Normalize to filename stored in DB
+          transactionImagePath = path.basename(providedImage);
+        }
+
+        // Require receipt image for mobile or online payments if none provided
+        if ((paymentMethod === 'mobile_payment' || paymentMethod === 'online') && !transactionImagePath) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف أو الإنترنت',
+          });
+        }
       }
     } catch (imageError) {
       console.error('Error processing transaction image:', imageError);
