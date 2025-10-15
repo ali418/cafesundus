@@ -374,7 +374,7 @@ exports.createOrderWithImage = async (req, res, next) => {
         };
         
         // البحث عن العميل أو إنشائه باستخدام المنطق المشترك
-        const { Op } = Sequelize;
+        const { Op } = require('sequelize');
         
         // البحث عن العميل بالبريد الإلكتروني أو رقم الهاتف
         if (customerEmail || customerPhone) {
@@ -418,6 +418,21 @@ exports.createOrderWithImage = async (req, res, next) => {
       } catch (customerError) {
         console.error('Error handling customer data:', customerError);
         // نستمر في إنشاء الطلب حتى لو فشلت عملية العميل
+      }
+    } else {
+      // إذا لم يتم توفير معلومات العميل، نقوم بإنشاء عميل افتراضي
+      try {
+        customer = await Customer.create({
+          name: 'Walk-in Customer',
+          email: null,
+          phone: null,
+          address: null
+        }, { transaction });
+        
+        customerId = customer.id;
+      } catch (error) {
+        console.error('Error creating default customer:', error);
+        // Continue with order even if customer creation fails
       }
     }
     

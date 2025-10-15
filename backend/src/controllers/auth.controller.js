@@ -174,19 +174,19 @@ exports.refreshToken = async (req, res, next) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      const error = new Error('Refresh token is required');
-      error.statusCode = 400;
-      throw error;
+      return res.status(401).json({ message: "No refresh token" });
     }
+
+    // في حالة وجود نموذج TokenModel، يمكن التحقق من وجود التوكن في قاعدة البيانات
+    // const storedToken = await TokenModel.findOne({ where: { token: refreshToken } });
+    // if (!storedToken) return res.status(401).json({ message: "Invalid refresh token" });
 
     // Verify refresh token
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch (err) {
-      const error = new Error('Invalid refresh token');
-      error.statusCode = 401;
-      throw error;
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
 
     // Find user

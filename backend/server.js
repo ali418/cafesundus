@@ -2,6 +2,10 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+// إضافة معالجة الأخطاء غير المتوقعة
+process.on("uncaughtException", err => console.error("Uncaught:", err));
+process.on("unhandledRejection", err => console.error("Unhandled:", err));
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
