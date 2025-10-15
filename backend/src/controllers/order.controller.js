@@ -74,13 +74,18 @@ exports.getOrderById = async (req, res, next) => {
     
     // If the ID looks like a numeric ID (not a UUID), try to find the corresponding UUID
     if (/^\d+$/.test(orderId)) {
-      console.log(`Received numeric ID: ${orderId}, attempting to find corresponding UUID`);
-      const uuid = await findUuidByNumericId(orderId, Sale);
-      if (uuid) {
-        console.log(`Found UUID ${uuid} for numeric ID ${orderId}`);
-        orderId = uuid;
-      } else {
-        console.log(`No UUID found for numeric ID ${orderId}`);
+      try {
+        console.log(`Received numeric ID: ${orderId}, attempting to find corresponding UUID`);
+        const uuid = await findUuidByNumericId(orderId, Sale);
+        if (uuid) {
+          console.log(`Found UUID ${uuid} for numeric ID ${orderId}`);
+          orderId = uuid;
+        } else {
+          console.log(`No UUID found for numeric ID ${orderId}`);
+        }
+      } catch (error) {
+        console.error(`Error converting numeric ID ${orderId} to UUID:`, error);
+        // Continue with the original ID if conversion fails
       }
     }
     
@@ -243,17 +248,35 @@ exports.createOrderWithImage = async (req, res, next) => {
     let orderData;
     if (req.body.orderData) {
       try {
-        orderData = JSON.parse(req.body.orderData);
+        // تحقق من نوع البيانات المرسلة
+        if (typeof req.body.orderData === 'string') {
+          orderData = JSON.parse(req.body.orderData);
+        } else {
+          // إذا كانت البيانات مرسلة كـ object مباشرة
+          orderData = req.body.orderData;
+        }
       } catch (error) {
+        console.error('Error parsing orderData:', error);
+        console.error('Raw orderData:', req.body.orderData);
         await transaction.rollback();
         return res.status(400).json({
           success: false,
-          message: 'Invalid order data format',
+          message: 'صيغة بيانات الطلب غير صحيحة',
+          error: error.message
         });
       }
     } else {
       // If not using FormData, use the body directly
       orderData = req.body;
+    }
+    
+    // تحقق من وجود البيانات الأساسية
+    if (!orderData) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'لم يتم توفير بيانات الطلب'
+      });
     }
     
     // Extract order data
@@ -463,23 +486,34 @@ exports.createOrderWithImage = async (req, res, next) => {
           transactionImagePath = path.basename(providedImage);
         }
 
-        // Require receipt image for mobile or online payments if none provided
-        if ((paymentMethod === 'mobile_payment' || paymentMethod === 'online') && !transactionImagePath) {
+        // Only require receipt image for mobile or online payments if none provided
+        // Make this check less strict - only enforce for mobile_payment
+        if (paymentMethod === 'mobile_payment' && !transactionImagePath) {
           await transaction.rollback();
           return res.status(400).json({
             success: false,
-            message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف أو الإنترنت',
+            message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف المحمول',
           });
+        }
+        
+        // For online payments, log warning but don't block the order
+        if (paymentMethod === 'online' && !transactionImagePath) {
+          console.warn('Online payment order submitted without transaction image');
         }
       }
     } catch (imageError) {
       console.error('Error processing transaction image:', imageError);
-      await transaction.rollback();
-      return res.status(500).json({
-        success: false,
-        message: 'حدث خطأ أثناء معالجة صورة المعاملة',
-        error: imageError.message
+      // Log detailed error information
+      console.error('Image processing error details:', {
+        message: imageError.message,
+        stack: imageError.stack,
+        requestBody: req.body ? Object.keys(req.body) : 'No body',
+        requestFiles: req.files ? Object.keys(req.files) : 'No files'
       });
+      
+      // Don't fail the entire transaction for image processing errors
+      // Just log the error and continue without an image
+      console.warn('Continuing order creation without transaction image due to processing error');
     }
     
     // Create the sale record
@@ -565,9 +599,19 @@ exports.createOrderWithImage = async (req, res, next) => {
     }
     console.error("📌 الكود كامل:", err);
     
+    // تحقق من نوع الخطأ لإرسال رسالة مناسبة
+    if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeForeignKeyConstraintError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "بيانات الطلب غير صحيحة، تأكد من إدخال جميع البيانات المطلوبة بشكل صحيح",
+        error: err.message
+      });
+    }
+    
     return res.status(500).json({ 
       success: false, 
-      error: "فشل إنشاء الطلب، راجع السيرفر Console للتفاصيل" 
+      message: "فشل إنشاء الطلب، راجع السيرفر Console للتفاصيل",
+      error: err.message
     });
   }
 };
