@@ -163,8 +163,15 @@ const OnlineOrderNotifications = () => {
   // Handle order actions
   const handleAcceptOrder = async (order) => {
     try {
-      // Update order status
-      await apiService.updateOrderStatus(order.id, 'accepted');
+      // Extract customer data from order
+      const customerData = {
+        customerName: order.customerName || order.customer?.name,
+        customerPhone: order.customerPhone || order.customer?.phone,
+        customerEmail: order.customerEmail || order.customer?.email
+      };
+      
+      // Accept order with customer data
+      await apiService.acceptOnlineOrder(order.id, customerData);
       
       // Mark notification as read
       if (order.notificationId) {

@@ -199,8 +199,19 @@ const apiService = {
       const response = await axiosInstance.put(`/orders/${id}/status`, { status });
       return response.data.data || response.data;
     } catch (error) {
-      console.error(`Error updating order status ${id}:`, error);
+      console.error('Error updating order status:', error);
       error.userMessage = error.friendlyMessage || 'Failed to update order status. Please try again later.';
+      throw error;
+    }
+  },
+  
+  acceptOnlineOrder: async (id, customerData) => {
+    try {
+      const response = await axiosInstance.post(`/orders/${id}/accept`, customerData);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error accepting online order:', error);
+      error.userMessage = error.friendlyMessage || 'Failed to accept online order. Please try again later.';
       throw error;
     }
   },

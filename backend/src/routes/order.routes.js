@@ -36,4 +36,9 @@ router.put('/:id/status', (req, res, next) => {
   orderController.updateOrderStatus(req, res, next);
 });
 
+// Accept online order
+router.post('/:id/accept', (req, res, next) => {
+  orderController.acceptOnlineOrder(req, res, next);
+});
+
 module.exports = router;

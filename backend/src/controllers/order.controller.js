@@ -235,6 +235,122 @@ exports.updateOrderStatus = async (req, res, next) => {
 }
 
 /**
+ * Accept online order and create/link customer
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+exports.acceptOnlineOrder = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { id } = req.params;
+    const { customerName, customerPhone, customerEmail } = req.body;
+    
+    // Find the order
+    const order = await Sale.findByPk(id, { transaction });
+    
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'الطلب غير موجود',
+      });
+    }
+    
+    // Find or create customer based on phone number
+    let customer;
+    if (customerPhone) {
+      const [foundCustomer, created] = await Customer.findOrCreate({
+        where: { 
+          [Op.or]: [
+            { phone: customerPhone },
+            { email: customerEmail && customerEmail.trim() !== '' ? customerEmail : null }
+          ]
+        },
+        defaults: {
+          name: customerName || 'عميل جديد',
+          phone: customerPhone,
+          email: customerEmail || null,
+        },
+        transaction
+      });
+      
+      customer = foundCustomer;
+      
+      console.log(`العميل ${created ? 'تم إنشاؤه' : 'موجود مسبقاً'} بالمعرف: ${customer.id}`);
+    } else {
+      // If no phone provided, try to find by email
+      if (customerEmail && customerEmail.trim() !== '') {
+        const [foundCustomer, created] = await Customer.findOrCreate({
+          where: { email: customerEmail },
+          defaults: {
+            name: customerName || 'عميل جديد',
+            email: customerEmail,
+          },
+          transaction
+        });
+        
+        customer = foundCustomer;
+        console.log(`العميل ${created ? 'تم إنشاؤه' : 'موجود مسبقاً'} بالمعرف: ${customer.id}`);
+      } else {
+        // If no phone or email, create a walk-in customer
+        customer = await Customer.create({
+          name: customerName || 'عميل زائر',
+          transaction
+        });
+        
+        console.log(`تم إنشاء عميل زائر بالمعرف: ${customer.id}`);
+      }
+    }
+    
+    // Update the order with customer ID and change status to accepted
+    order.customerId = customer.id;
+    order.status = 'accepted';
+    await order.save({ transaction });
+    
+    // Create notification for status update
+    const orderIdNumeric = uuidToNumericId(order.id);
+    
+    // Create notification for the customer
+    if (order.userId) {
+      await notificationController.createSystemNotification({
+        userId: order.userId,
+        type: 'order_status',
+        title: 'تحديث حالة الطلب',
+        message: `تم قبول الطلب #${orderIdNumeric}`,
+        relatedId: orderIdNumeric,
+        relatedType: 'order'
+      }, transaction);
+    }
+    
+    // Create notification for all admins
+    await notificationController.createSystemNotification({
+      type: 'order_status_admin',
+      title: 'تم قبول طلب',
+      message: `تم قبول الطلب #${orderIdNumeric} وربطه بالعميل ${customer.name}`,
+      relatedId: orderIdNumeric,
+      relatedType: 'order'
+    }, transaction);
+    
+    await transaction.commit();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'تم قبول الطلب وربطه بالعميل بنجاح',
+      data: {
+        order,
+        customer
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error("خطأ في قبول الطلب:", error);
+    next(error);
+  }
+};
+
+/**
  * Create a new order with transaction image
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -374,7 +490,8 @@ exports.createOrderWithImage = async (req, res, next) => {
       });
     }
 
-    // Handle customer information
+    // For online orders, we'll store customer information but not create a customer record yet
+    // The customer will be created only when the order is accepted
     let customer = null;
     if (customerId) {
       // If customer ID is provided, verify it exists
@@ -386,78 +503,9 @@ exports.createOrderWithImage = async (req, res, next) => {
           message: 'Customer not found',
         });
       }
-    } else if (customerName || customerPhone || customerEmail) {
-      try {
-        // استخدام خدمة البحث عن العميل أو إنشائه
-        const customerData = {
-          name: customerName || 'Walk-in Customer',
-          email: customerEmail || null,
-          phone: customerPhone || null,
-          address: deliveryAddress || null
-        };
-        
-        // البحث عن العميل أو إنشائه باستخدام المنطق المشترك
-        const { Op } = require('sequelize');
-        
-        // البحث عن العميل بالبريد الإلكتروني أو رقم الهاتف
-        if (customerEmail || customerPhone) {
-          const whereClause = {
-            [Op.or]: [
-              customerEmail ? { email: customerEmail } : null,
-              customerPhone ? { phone: customerPhone } : null
-            ].filter(Boolean)
-          };
-          
-          customer = await Customer.findOne({
-            where: whereClause,
-            transaction
-          });
-        }
-        
-        // إذا وجدنا العميل، نقوم بتحديث بياناته إذا لزم الأمر
-        if (customer) {
-          customerId = customer.id;
-          
-          // تحديث معلومات العميل إذا لزم الأمر
-          const updates = {};
-          if (customerName && !customer.name) updates.name = customerName;
-          if (customerEmail && !customer.email) updates.email = customerEmail;
-          if (customerPhone && !customer.phone) updates.phone = customerPhone;
-          if (deliveryAddress && !customer.address) updates.address = deliveryAddress;
-          
-          if (Object.keys(updates).length > 0) {
-            await customer.update(updates, { transaction });
-          }
-        } else {
-          // إذا لم يوجد العميل، نقوم بإنشاء عميل جديد
-          customer = await Customer.create({
-            name: customerName || 'Walk-in Customer',
-            phone: customerPhone || null,
-            email: customerEmail || null,
-            address: deliveryAddress || null,
-          }, { transaction });
-          customerId = customer.id;
-        }
-      } catch (customerError) {
-        console.error('Error handling customer data:', customerError);
-        // نستمر في إنشاء الطلب حتى لو فشلت عملية العميل
-      }
-    } else {
-      // إذا لم يتم توفير معلومات العميل، نقوم بإنشاء عميل افتراضي
-      try {
-        customer = await Customer.create({
-          name: 'Walk-in Customer',
-          email: null,
-          phone: null,
-          address: null
-        }, { transaction });
-        
-        customerId = customer.id;
-      } catch (error) {
-        console.error('Error creating default customer:', error);
-        // Continue with order even if customer creation fails
-      }
     }
+    // For online orders without customerId, we'll store the customer info temporarily
+    // and create the customer record only when the order is accepted
     
     // Process transaction image if provided
     let transactionImagePath = null;
@@ -534,6 +582,8 @@ exports.createOrderWithImage = async (req, res, next) => {
       customerPhone: customerPhone || '',
       customerEmail: customerEmail || '',
       source: 'online', // Mark as online order
+      // Store additional customer information for later use when accepting the order
+      type: 'online'
     }, { transaction });
     
     // Create sale items
