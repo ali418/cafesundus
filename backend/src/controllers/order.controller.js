@@ -481,8 +481,22 @@ exports.createOrderWithImage = async (req, res, next) => {
           ? parseFloat(orderData.total)
           : (subtotalNum + taxAmountNum - discountAmountNum));
 
-    // Validate required fields
+    // Validate required fields - make this validation less strict for online orders
+    if (!items) {
+      // Try to extract items from orderData if available
+      if (orderData && orderData.items && Array.isArray(orderData.items)) {
+        items = orderData.items;
+      } else if (orderData && orderData.orderItems && Array.isArray(orderData.orderItems)) {
+        items = orderData.orderItems;
+      }
+    }
+    
+    // Final validation after attempting to extract items
     if (!items || !Array.isArray(items) || items.length === 0) {
+      console.error('Order validation failed: No items provided', { 
+        body: req.body, 
+        orderData: orderData 
+      });
       await transaction.rollback();
       return res.status(400).json({
         success: false,
