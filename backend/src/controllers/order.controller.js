@@ -490,21 +490,15 @@ exports.createOrderWithImage = async (req, res, next) => {
       });
     }
 
-    // For online orders, we'll store customer information but not create a customer record yet
-    // The customer will be created only when the order is accepted
+    // For online orders, we don't use customerId at all - we'll create the customer only when the order is accepted
+    // This prevents foreign key constraint errors
     let customer = null;
-    if (customerId) {
-      // If customer ID is provided, verify it exists
-      customer = await Customer.findByPk(customerId, { transaction });
-      if (!customer) {
-        await transaction.rollback();
-        return res.status(400).json({
-          success: false,
-          message: 'Customer not found',
-        });
-      }
-    }
-    // For online orders without customerId, we'll store the customer info temporarily
+    
+    // We'll completely ignore any customerId sent from the frontend for online orders
+    // and set it to null to avoid foreign key constraint errors
+    customerId = null;
+    
+    // For online orders, we'll store the customer info temporarily
     // and create the customer record only when the order is accepted
     
     // Process transaction image if provided
@@ -566,7 +560,8 @@ exports.createOrderWithImage = async (req, res, next) => {
     
     // Create the sale record
     const sale = await Sale.create({
-      customerId,
+      // Only set customerId if we're sure the customer exists
+      customerId: customer ? customer.id : null,
       userId: req.user ? req.user.id : '550e8400-e29b-41d4-a716-446655440000', // Use authenticated user or default admin UUID
       subtotal: subtotalNum,
       taxAmount: taxAmountNum,
