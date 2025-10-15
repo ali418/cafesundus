@@ -3,20 +3,21 @@ const router = express.Router();
 const { body } = require('express-validator');
 const validateRequest = require('../middleware/validateRequest');
 const saleController = require('../controllers/sale.controller');
+const { protect } = require('../middleware/auth');
 
 /**
  * @route GET /api/v1/sales
  * @desc Get all sales
  * @access Private
  */
-router.get('/', saleController.getAllSales);
+router.get('/', protect, saleController.getAllSales);
 
 /**
  * @route GET /api/v1/sales/:id
  * @desc Get sale by ID
  * @access Private
  */
-router.get('/:id', saleController.getSaleById);
+router.get('/:id', protect, saleController.getSaleById);
 
 /**
  * @route POST /api/v1/sales
@@ -26,6 +27,7 @@ router.get('/:id', saleController.getSaleById);
 router.post(
   '/',
   [
+    protect,
     body('customerId').optional().isUUID().withMessage('Valid customer ID is required'),
     body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
     body('items.*.productId').notEmpty().isInt().withMessage('Valid product ID is required for each item'),

@@ -194,7 +194,7 @@ exports.createSale = async (req, res, next) => {
     // Prepare the actual payload that will be sent to Sequelize
     const salePayload = {
       customerId,
-      userId: (req.body && (req.body.cashierId || req.body.userId)) ? (req.body.cashierId || req.body.userId) : (req.user && req.user.id ? req.user.id : null), // Prefer cashierId/userId from body, fallback to authenticated user
+      userId: req.user.id, // Always use authenticated user ID from protect middleware
       subtotal,
       taxAmount,
       discountAmount,

@@ -4,6 +4,7 @@ const orderController = require('../controllers/order.controller');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { protect } = require('../middleware/auth');
 
 // Ensure upload directory exists
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
@@ -16,28 +17,28 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Order routes test successful' });
 });
 
-// Create order with image
-router.post('/with-image', (req, res, next) => {
+// Create order with image - IMPORTANT: Specific routes must come before dynamic routes
+router.post('/with-image', protect, (req, res, next) => {
   orderController.createOrderWithImage(req, res, next);
 });
 
 // Get all orders
-router.get('/', (req, res, next) => {
+router.get('/', protect, (req, res, next) => {
   orderController.getOrders(req, res, next);
 });
 
-// Get order by ID
-router.get('/:id', (req, res, next) => {
+// Get order by ID - This must come AFTER specific routes
+router.get('/:id', protect, (req, res, next) => {
   orderController.getOrderById(req, res, next);
 });
 
 // Update order status
-router.put('/:id/status', (req, res, next) => {
+router.put('/:id/status', protect, (req, res, next) => {
   orderController.updateOrderStatus(req, res, next);
 });
 
 // Accept online order
-router.post('/:id/accept', (req, res, next) => {
+router.post('/:id/accept', protect, (req, res, next) => {
   orderController.acceptOnlineOrder(req, res, next);
 });
 
