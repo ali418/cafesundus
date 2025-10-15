@@ -186,11 +186,9 @@ const apiService = {
         // ignore logging errors
       }
 
-      const response = await axiosInstance.post('/orders/with-image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      // Do NOT set Content-Type manually for FormData.
+      // Let the browser/XHR add the correct multipart boundary.
+      const response = await axiosInstance.post('/orders/with-image', formData);
       console.log('✅ Order created successfully:', response.data);
       return response.data.data || response.data;
     } catch (error) {
