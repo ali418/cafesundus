@@ -673,6 +673,22 @@ exports.createOrderWithImage = async (req, res, next) => {
       }
     }
 
+    // Handle customerId from request if customer object is not available
+    if (!customer && customerId) {
+      try {
+        // Try to find the customer by the provided ID
+        const foundCustomer = await Customer.findByPk(customerId, { transaction, attributes: ['id', 'name', 'email', 'phone'] });
+        if (foundCustomer) {
+          customer = foundCustomer;
+          console.log(`Found customer by ID: ${customer.id}, name: ${customer.name}`);
+        } else {
+          console.warn(`Customer with ID ${customerId} not found, creating sale without customer link`);
+        }
+      } catch (err) {
+        console.error('Error finding customer by ID:', err.message);
+      }
+    }
+
     // Create the sale record
     const sale = await Sale.create({
       // Only set customerId if we're sure the customer exists
