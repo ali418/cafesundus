@@ -379,11 +379,15 @@ exports.createOrderWithImage = async (req, res, next) => {
       try {
         // تحقق من نوع البيانات المرسلة
         if (typeof req.body.orderData === 'string') {
+          console.log('DEBUG raw orderData (string):', (req.body.orderData || '').substring(0, 300));
           orderData = JSON.parse(req.body.orderData);
         } else {
           // إذا كانت البيانات مرسلة كـ object مباشرة
+          console.log('DEBUG raw orderData (object) keys:', Object.keys(req.body.orderData || {}));
           orderData = req.body.orderData;
         }
+        console.log('DEBUG parsed orderData keys:', Object.keys(orderData || {}));
+        console.log('DEBUG orderData.customerId:', orderData ? orderData.customerId : undefined);
       } catch (error) {
         console.error('Error parsing orderData:', error);
         console.error('Raw orderData:', req.body.orderData);
@@ -396,6 +400,7 @@ exports.createOrderWithImage = async (req, res, next) => {
       }
     } else {
       // If not using FormData, use the body directly
+      console.log('DEBUG using req.body directly, keys:', Object.keys(req.body || {}));
       orderData = req.body;
     }
     
@@ -436,6 +441,8 @@ exports.createOrderWithImage = async (req, res, next) => {
       if (!paymentMethod && info.paymentMethod) {
         paymentMethod = info.paymentMethod;
       }
+      // Fallback: pick customerId inside nested info if present
+      customerId = customerId || info.customerId || info.customer_id || customerId;
     }
 
     // Normalize and map paymentMethod values from frontend to backend enums
@@ -462,6 +469,7 @@ exports.createOrderWithImage = async (req, res, next) => {
       customerEmail = customerEmail || b.customer_email || b.customerEmail || '';
       deliveryAddress = deliveryAddress || b.delivery_address || b.address || deliveryAddress || '';
 
+      // Fallbacks for totals
       subtotal = (typeof subtotal !== 'undefined' && subtotal !== null) ? subtotal : (typeof b.subtotal !== 'undefined' ? b.subtotal : subtotal);
       taxAmount = (typeof taxAmount !== 'undefined' && taxAmount !== null) ? taxAmount : (typeof b.tax_amount !== 'undefined' ? b.tax_amount : (typeof b.tax !== 'undefined' ? b.tax : taxAmount));
       discountAmount = (typeof discountAmount !== 'undefined' && discountAmount !== null) ? discountAmount : (typeof b.discount_amount !== 'undefined' ? b.discount_amount : (typeof b.discount !== 'undefined' ? b.discount : discountAmount));
@@ -470,8 +478,12 @@ exports.createOrderWithImage = async (req, res, next) => {
       paymentMethod = paymentMethod || b.payment_method || paymentMethod;
       paymentStatus = paymentStatus || b.payment_status || paymentStatus;
       notes = notes || b.notes || notes;
-      customerId = customerId || b.customer_id || b.customerId || customerId;
+      // Fallbacks for customerId variations
+      customerId = customerId || b.customer_id || b.customerID || b.customerId || customerId;
     }
+
+    // Final log for customerId
+    console.log('DEBUG final customerId:', customerId);
 
     // Compute numeric totals with fallbacks (accept tax/total from frontend if provided)
     const subtotalNum = Number.isFinite(parseFloat(subtotal))
