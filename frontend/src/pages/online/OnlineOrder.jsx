@@ -81,31 +81,47 @@ const placeholderImage = `data:image/svg+xml;utf8,
 const getProductImageUrl = (product) => {
   // نُفضل الحقل image_url من قاعدة البيانات
   const raw = product?.image_url || product?.image || product?.imageUrl || '';
-  const img = typeof raw === 'string' ? raw.trim() : '';
+  let img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
+  // طبعنة المسار للتعامل مع Windows: تحويل \\ إلى /
+  img = img.replace(/\\\\/g, '/');
+
+  // إزالة الاستعلام أو الهاش إن وجد
+  const noQuery = img.split('#')[0].split('?')[0];
+
   // إذا كان الرابط مطلقًا
-  if (/^https?:\/\//i.test(img)) {
+  if (/^https?:\/\//i.test(noQuery)) {
     try {
-      const url = new URL(img);
-      // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
-      if (url.origin === window.location.origin) return img;
-      if (url.pathname.startsWith('/uploads/')) return url.pathname;
-      // للروابط الخارجية، نستخدمها مباشرة لأن الصور قد تكون مخزنة على خوادم أخرى
-      return img;
+      const url = new URL(noQuery);
+      // إذا كان نفس الأصل نُبقيه كاملاً
+      if (url.origin === window.location.origin) return url.href;
+      // إن كان ضمن /uploads/ نعيد المسار النسبي
+      if (url.pathname.includes('/uploads/')) {
+        const idx = url.pathname.indexOf('/uploads/');
+        return url.pathname.slice(idx);
+      }
+      // خلاف ذلك نُبقي الرابط كاملاً (قد يكون لمخزن خارجي)
+      return url.href;
     } catch {
       // لو فشل التحليل نُكمل المعالجة أدناه
     }
   }
 
   // استخدام مسار نسبي بنفس الأصل لتجنب مشاكل CORS و CSP
-  if (img.startsWith('/uploads/')) return img; // نفس الأصل
-  if (img.startsWith('uploads/')) return `/${img}`;
+  if (noQuery.startsWith('/uploads/')) return noQuery; // نفس الأصل
+  if (noQuery.includes('/uploads/')) {
+    const idx = noQuery.indexOf('/uploads/');
+    return noQuery.slice(idx);
+  }
+  if (noQuery.startsWith('uploads/')) return `/${noQuery}`;
 
-  // على الأرجح اسم ملف صورة
-  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    // في بيئة الإنتاج، نحتاج إلى استخدام المسار الكامل للصورة
-    return `/uploads/${img}`;
+  // على الأرجح اسم ملف صورة أو مسار بدون مجلد uploads
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(noQuery)) {
+    // استخرج اسم الملف فقط
+    const parts = noQuery.split('/');
+    const fileName = parts[parts.length - 1];
+    return `/uploads/${fileName}`;
   }
 
   return placeholderImage;
@@ -748,6 +764,7 @@ const OnlineOrder = () => {
                   height="160"
                   image={getProductImageUrl(product)}
                   alt={product.name}
+                  onError={(e) => { e.currentTarget.src = placeholderImage; }}
                   sx={{ 
                     objectFit: 'cover',
                     transition: 'transform 0.5s',
@@ -885,6 +902,7 @@ const OnlineOrder = () => {
                   <img 
                     src={item.image} 
                     alt={item.name} 
+                    onError={(e) => { e.currentTarget.src = placeholderImage; }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} 
                   />
                 </Box>

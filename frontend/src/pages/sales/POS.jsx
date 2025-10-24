@@ -74,31 +74,41 @@ const placeholderImage = `data:image/svg+xml;utf8,
 const getProductImageUrl = (product) => {
   // Prefer database field image_url
   const raw = product?.image_url || product?.image || product?.imageUrl || '';
-  const img = typeof raw === 'string' ? raw.trim() : '';
+  let img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
+  // Normalize Windows-style backslashes and strip query/hash
+  img = img.replace(/\\\\/g, '/');
+  const noQuery = img.split('#')[0].split('?')[0];
+
   // Absolute URL
-  if (/^https?:\/\//i.test(img)) {
+  if (/^https?:\/\//i.test(noQuery)) {
     try {
-      const url = new URL(img);
-      // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
-      if (url.origin === window.location.origin) return img;
-      if (url.pathname.startsWith('/uploads/')) return url.pathname;
-      // للروابط الخارجية، نستخدمها مباشرة لأن الصور قد تكون مخزنة على خوادم أخرى
-      return img;
+      const url = new URL(noQuery);
+      if (url.origin === window.location.origin) return url.href;
+      if (url.pathname.includes('/uploads/')) {
+        const idx = url.pathname.indexOf('/uploads/');
+        return url.pathname.slice(idx);
+      }
+      return url.href;
     } catch {
-      // لو فشل التحليل نُكمل المعالجة أدناه
+      // continue below
     }
   }
 
   // Normalize uploads path and use relative URL (works with proxy in dev and backend in prod)
-  if (img.startsWith('/uploads/')) return img;
-  if (img.startsWith('uploads/')) return '/' + img;
+  if (noQuery.startsWith('/uploads/')) return noQuery;
+  if (noQuery.includes('/uploads/')) {
+    const idx = noQuery.indexOf('/uploads/');
+    return noQuery.slice(idx);
+  }
+  if (noQuery.startsWith('uploads/')) return '/' + noQuery;
 
   // Likely a filename
-  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    // في بيئة الإنتاج، نحتاج إلى استخدام المسار النسبي للصورة
-    return `/uploads/${img}`;
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(noQuery)) {
+    const parts = noQuery.split('/');
+    const fileName = parts[parts.length - 1];
+    return `/uploads/${fileName}`;
   }
 
   return placeholderImage;
