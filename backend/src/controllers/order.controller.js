@@ -581,7 +581,21 @@ exports.createOrderWithImage = async (req, res, next) => {
         }, { transaction });
       }
     }
-    
+
+    // If customerId was provided explicitly and we didn't find/create by phone/email, use it
+    if (!customer && customerId) {
+      try {
+        const foundById = await Customer.findByPk(customerId, { transaction });
+        if (foundById) {
+          customer = foundById;
+        } else {
+          console.warn(`Provided customerId ${customerId} not found; proceeding without customer linkage`);
+        }
+      } catch (e) {
+        console.warn('Failed to lookup provided customerId:', e?.message || e);
+      }
+    }
+
     // Process transaction image if provided
     let transactionImagePath = null;
     try {

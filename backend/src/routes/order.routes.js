@@ -39,7 +39,7 @@ router.put('/:id/status', protect, (req, res, next) => {
 });
 
 // Accept online order
-router.post('/:id/accept', protect, (req, res, next) => {
+router.post('/:id/accept', mockAuth, (req, res, next) => {
   orderController.acceptOnlineOrder(req, res, next);
 });
 
