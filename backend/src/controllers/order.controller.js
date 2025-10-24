@@ -245,7 +245,12 @@ exports.acceptOnlineOrder = async (req, res, next) => {
   
   try {
     const { id } = req.params;
-    const { customerName, customerPhone, customerEmail } = req.body;
+    const { customerName, customerPhone, customerEmail, customerData } = req.body;
+    
+    // Extract customer data from either direct fields or customerData object
+    const finalCustomerName = customerName || customerData?.customerName;
+    const finalCustomerPhone = customerPhone || customerData?.customerPhone;
+    const finalCustomerEmail = customerEmail || customerData?.customerEmail;
     
     // Find the order
     const order = await Sale.findByPk(id, { transaction });
@@ -307,6 +312,9 @@ exports.acceptOnlineOrder = async (req, res, next) => {
     // Update the order with customer ID and change status to accepted
     order.customerId = customer.id;
     order.status = 'accepted';
+    order.customerName = finalCustomerName;
+    order.customerPhone = finalCustomerPhone;
+    order.customerEmail = finalCustomerEmail;
     await order.save({ transaction });
     
     // Create notification for status update
@@ -357,6 +365,11 @@ exports.acceptOnlineOrder = async (req, res, next) => {
  * @param {Function} next - Express next middleware function
  */
 exports.createOrderWithImage = async (req, res, next) => {
+  console.log('---- DEBUG START ----');
+  console.log('req.body keys:', Object.keys(req.body || {}));
+  console.log('req.files keys:', req.files ? Object.keys(req.files) : 'NO FILES');
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('---- DEBUG END ----');
   const transaction = await sequelize.transaction();
   
   try {
@@ -545,16 +558,29 @@ exports.createOrderWithImage = async (req, res, next) => {
       });
     }
 
-    // For online orders, we don't use customerId at all - we'll create the customer only when the order is accepted
-    // This prevents foreign key constraint errors
+    // Find or create customer if customer data is provided
     let customer = null;
-    
-    // We'll completely ignore any customerId sent from the frontend for online orders
-    // and set it to null to avoid foreign key constraint errors
-    customerId = null;
-    
-    // For online orders, we'll store the customer info temporarily
-    // and create the customer record only when the order is accepted
+    if (customerPhone || customerEmail) {
+      // Try to find existing customer by phone or email
+      customer = await Customer.findOne({
+        where: {
+          [Op.or]: [
+            customerPhone ? { phone: customerPhone } : null,
+            customerEmail ? { email: customerEmail } : null
+          ].filter(Boolean)
+        },
+        transaction
+      });
+
+      // If customer doesn't exist, create a new one
+      if (!customer && (customerName || customerPhone || customerEmail)) {
+        customer = await Customer.create({
+          name: customerName || 'Online Customer',
+          phone: customerPhone,
+          email: customerEmail,
+        }, { transaction });
+      }
+    }
     
     // Process transaction image if provided
     let transactionImagePath = null;
@@ -617,7 +643,7 @@ exports.createOrderWithImage = async (req, res, next) => {
     const sale = await Sale.create({
       // Only set customerId if we're sure the customer exists
       customerId: customer ? customer.id : null,
-      userId: req.user ? req.user.id : '550e8400-e29b-41d4-a716-446655440000', // Use authenticated user or default admin UUID
+      userId: req.user.id,
       subtotal: subtotalNum,
       taxAmount: taxAmountNum,
       discountAmount: discountAmountNum,
