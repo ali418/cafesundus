@@ -162,8 +162,12 @@ const apiService = {
       try {
         const preview = {};
         for (const [key, value] of formData.entries()) {
-          if (key === 'transactionImage' && value && typeof value === 'object') {
-            preview[key] = value.name || 'file';
+          if (key === 'transactionImage' && value) {
+            if (value instanceof File) {
+              preview[key] = `file(name=${value.name}, type=${value.type || 'unknown'}, size=${value.size || 0})`;
+            } else {
+              preview[key] = typeof value === 'string' ? value : 'binary';
+            }
           } else if (key === 'orderData') {
             // Try to parse to show structure
             try {

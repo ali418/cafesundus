@@ -661,10 +661,12 @@ const OnlineOrder = () => {
       // Add order data to form
       formData.append('orderData', JSON.stringify(orderData));
 
-      // Add transaction image if available
-      if (customerInfo.transactionImage) {
-        formData.append('transactionImage', customerInfo.transactionImage);
+      // Add transaction image if available (must be a File)
+      if (!customerInfo.transactionImage || !(customerInfo.transactionImage instanceof File)) {
+        toast.error(t('pleaseUploadReceiptImage', 'الرجاء اختيار صورة إيصال الدفع أولاً'));
+        return;
       }
+      formData.append('transactionImage', customerInfo.transactionImage, customerInfo.transactionImage.name);
 
       // Debug: print request payload before sending
       try {
