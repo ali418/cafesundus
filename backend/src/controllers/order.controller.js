@@ -365,498 +365,162 @@ exports.acceptOnlineOrder = async (req, res, next) => {
  * @param {Function} next - Express next middleware function
  */
 exports.createOrderWithImage = async (req, res, next) => {
-  console.log('---- DEBUG START ----');
-  console.log('req.body keys:', Object.keys(req.body || {}));
-  console.log('req.files keys:', req.files ? Object.keys(req.files) : 'NO FILES');
-  console.log('Content-Type:', req.headers['content-type']);
-  console.log('---- DEBUG END ----');
-  const transaction = await sequelize.transaction();
+  const t = await sequelize.transaction();
   
   try {
-    // Check if data is sent as JSON string in orderData field (from frontend FormData)
+    // Parse orderData from FormData or JSON body
     let orderData;
-    if (req.body.orderData) {
+    if (req.body && typeof req.body.orderData !== 'undefined') {
       try {
-        // تحقق من نوع البيانات المرسلة
-        if (typeof req.body.orderData === 'string') {
-          console.log('DEBUG raw orderData (string):', (req.body.orderData || '').substring(0, 300));
-          orderData = JSON.parse(req.body.orderData);
-        } else {
-          // إذا كانت البيانات مرسلة كـ object مباشرة
-          console.log('DEBUG raw orderData (object) keys:', Object.keys(req.body.orderData || {}));
-          orderData = req.body.orderData;
-        }
-        console.log('DEBUG parsed orderData keys:', Object.keys(orderData || {}));
-        console.log('DEBUG orderData.customerId:', orderData ? orderData.customerId : undefined);
-      } catch (error) {
-        console.error('Error parsing orderData:', error);
-        console.error('Raw orderData:', req.body.orderData);
-        await transaction.rollback();
-        return res.status(400).json({
-          success: false,
-          message: 'صيغة بيانات الطلب غير صحيحة',
-          error: error.message
-        });
+        orderData = typeof req.body.orderData === 'string' ? JSON.parse(req.body.orderData) : req.body.orderData;
+      } catch (e) {
+        await t.rollback();
+        return res.status(400).json({ success: false, message: 'صيغة بيانات الطلب غير صحيحة (orderData)', error: e.message });
       }
     } else {
-      // If not using FormData, use the body directly
-      console.log('DEBUG using req.body directly, keys:', Object.keys(req.body || {}));
       orderData = req.body;
     }
-    
-    // تحقق من وجود البيانات الأساسية
+
     if (!orderData) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'لم يتم توفير بيانات الطلب'
-      });
-    }
-    
-    // Extract order data
-    let { 
-      customerId, 
-      items, 
-      subtotal, 
-      taxAmount, 
-      discountAmount, 
-      totalAmount, 
-      paymentMethod, 
-      paymentStatus,
-      notes,
-      customerName,
-      customerPhone,
-      customerEmail,
-      deliveryAddress
-    } = orderData;
-
-    // Fallback: support nested customerInfo coming from frontend (name, phone, email, address)
-    if (orderData && orderData.customerInfo) {
-      const info = orderData.customerInfo || {};
-      customerName = customerName || info.name || '';
-      customerPhone = customerPhone || info.phone || '';
-      customerEmail = customerEmail || info.email || '';
-      deliveryAddress = deliveryAddress || info.address || deliveryAddress || '';
-      // If paymentMethod exists inside customerInfo and not already set, use it
-      if (!paymentMethod && info.paymentMethod) {
-        paymentMethod = info.paymentMethod;
-      }
-      // Fallback: pick customerId inside nested info if present
-      customerId = customerId || info.customerId || info.customer_id || customerId;
+      await t.rollback();
+      return res.status(400).json({ success: false, message: 'بيانات الطلب (orderData) مفقودة' });
     }
 
-    // Normalize and map paymentMethod values from frontend to backend enums
-    {
-      const pmRaw = (paymentMethod || '').toString().trim();
-      if (!pmRaw) {
-        paymentMethod = 'cash'; // default to cash on delivery
-      } else if (pmRaw === 'cashOnDelivery' || pmRaw === 'cash') {
-        paymentMethod = 'cash';
-      } else if (pmRaw === 'mobileMoney' || pmRaw === 'mobile_payment') {
-        paymentMethod = 'mobile_payment';
-      } else if (pmRaw === 'online') {
-        paymentMethod = 'online';
-      } else {
-        paymentMethod = 'cash'; // safe fallback
-      }
+    const { customerData, cartItems, total } = orderData;
+
+    if (!customerData || !customerData.phone) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: 'بيانات العميل أو رقم الهاتف مفقودة' });
     }
 
-    // Map snake_case fields from body if present (fallbacks)
-    {
-      const b = orderData || {};
-      customerName = customerName || b.customer_name || b.customerName || '';
-      customerPhone = customerPhone || b.customer_phone || b.customerPhone || '';
-      customerEmail = customerEmail || b.customer_email || b.customerEmail || '';
-      deliveryAddress = deliveryAddress || b.delivery_address || b.address || deliveryAddress || '';
+    // Find or create customer within the same transaction
+    const [customer] = await Customer.findOrCreate({
+      where: { phone: String(customerData.phone || '').trim() },
+      defaults: {
+        name: (customerData.name || 'عميل جديد').trim(),
+        email: (customerData.email || '').trim() || null,
+        address: customerData.address || null,
+      },
+      transaction: t,
+    });
 
-      // Fallbacks for totals
-      subtotal = (typeof subtotal !== 'undefined' && subtotal !== null) ? subtotal : (typeof b.subtotal !== 'undefined' ? b.subtotal : subtotal);
-      taxAmount = (typeof taxAmount !== 'undefined' && taxAmount !== null) ? taxAmount : (typeof b.tax_amount !== 'undefined' ? b.tax_amount : (typeof b.tax !== 'undefined' ? b.tax : taxAmount));
-      discountAmount = (typeof discountAmount !== 'undefined' && discountAmount !== null) ? discountAmount : (typeof b.discount_amount !== 'undefined' ? b.discount_amount : (typeof b.discount !== 'undefined' ? b.discount : discountAmount));
-      totalAmount = (typeof totalAmount !== 'undefined' && totalAmount !== null) ? totalAmount : (typeof b.total_amount !== 'undefined' ? b.total_amount : (typeof b.total !== 'undefined' ? b.total : totalAmount));
-
-      paymentMethod = paymentMethod || b.payment_method || paymentMethod;
-      paymentStatus = paymentStatus || b.payment_status || paymentStatus;
-      notes = notes || b.notes || notes;
-      // Fallbacks for customerId variations
-      customerId = customerId || b.customer_id || b.customerID || b.customerId || customerId;
+    // Normalize items
+    let items = Array.isArray(cartItems) ? cartItems : (Array.isArray(orderData.items) ? orderData.items : []);
+    if (!items || items.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: 'يجب أن يحتوي الطلب على عنصر واحد على الأقل' });
     }
 
-    // Final log for customerId
-    console.log('DEBUG final customerId:', customerId);
+    // Map payment method values
+    let paymentMethod = orderData.paymentMethod || customerData.paymentMethod || 'cash';
+    const pmRaw = String(paymentMethod || '').trim();
+    if (pmRaw === 'cashOnDelivery' || pmRaw === 'cash') paymentMethod = 'cash';
+    else if (pmRaw === 'mobileMoney' || pmRaw === 'mobile_payment') paymentMethod = 'mobile_payment';
+    else if (pmRaw === 'online') paymentMethod = 'online';
+    else paymentMethod = 'cash';
 
-    // Strict validation: require valid customerId and customer existence
-    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (!customerId || (typeof customerId === 'string' && !uuidRegex.test(customerId.trim()))) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'بيانات العميل (customerId) مفقودة أو غير صحيحة'
-      });
-    }
-    const customerExistsRecord = await Customer.findByPk(customerId, { transaction, attributes: ['id','name','email','phone'] });
-    if (!customerExistsRecord) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'العميل غير موجود، لا يمكن إنشاء الطلبية'
-      });
-    }
-    let customer = customerExistsRecord;
-
-    // Compute numeric totals with fallbacks (accept tax/total from frontend if provided)
-    const subtotalNum = Number.isFinite(parseFloat(subtotal))
-      ? parseFloat(subtotal)
-      : (Array.isArray(items)
-          ? items.reduce((sum, it) => sum + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0)), 0)
-          : 0);
-
-    const taxAmountNum = Number.isFinite(parseFloat(taxAmount))
-      ? parseFloat(taxAmount)
-      : (orderData && Number.isFinite(parseFloat(orderData.tax)) ? parseFloat(orderData.tax) : 0);
-
-    const discountAmountNum = Number.isFinite(parseFloat(discountAmount))
-      ? parseFloat(discountAmount)
-      : 0;
-
-    const totalAmountNum = Number.isFinite(parseFloat(totalAmount))
-      ? parseFloat(totalAmount)
-      : (orderData && Number.isFinite(parseFloat(orderData.total))
-          ? parseFloat(orderData.total)
-          : (subtotalNum + taxAmountNum - discountAmountNum));
-
-    // Validate required fields - make this validation less strict for online orders
-    if (!items) {
-      console.log('Items not found directly, attempting to extract from request data');
-      
-      // Try to extract items from various possible locations in the request data
-      if (orderData && orderData.items) {
-        if (typeof orderData.items === 'string') {
-          try {
-            items = JSON.parse(orderData.items);
-            console.log('Successfully parsed items from string:', items);
-          } catch (parseError) {
-            console.error('Failed to parse items string:', parseError);
-          }
-        } else if (Array.isArray(orderData.items)) {
-          items = orderData.items;
-          console.log('Found items array in orderData.items');
-        }
-      } else if (orderData && orderData.orderItems) {
-        if (typeof orderData.orderItems === 'string') {
-          try {
-            items = JSON.parse(orderData.orderItems);
-            console.log('Successfully parsed orderItems from string:', items);
-          } catch (parseError) {
-            console.error('Failed to parse orderItems string:', parseError);
-          }
-        } else if (Array.isArray(orderData.orderItems)) {
-          items = orderData.orderItems;
-          console.log('Found items array in orderData.orderItems');
-        }
-      } else if (orderData && orderData.cartItems) {
-        if (typeof orderData.cartItems === 'string') {
-          try {
-            items = JSON.parse(orderData.cartItems);
-            console.log('Successfully parsed cartItems from string:', items);
-          } catch (parseError) {
-            console.error('Failed to parse cartItems string:', parseError);
-          }
-        } else if (Array.isArray(orderData.cartItems)) {
-          items = orderData.cartItems;
-          console.log('Found items array in orderData.cartItems');
-        }
-      } else if (req.body.items) {
-        if (typeof req.body.items === 'string') {
-          try {
-            items = JSON.parse(req.body.items);
-            console.log('Successfully parsed items from req.body.items string');
-          } catch (parseError) {
-            console.error('Failed to parse req.body.items string:', parseError);
-          }
-        } else if (Array.isArray(req.body.items)) {
-          items = req.body.items;
-          console.log('Found items array in req.body.items');
-        }
-      }
-      
-      // Log what we found or didn't find
-      console.log('Items extraction result:', items ? `Found ${items.length} items` : 'No items found');
-    }
-    
-    // Final validation after attempting to extract items
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      console.error('Order validation failed: No items provided', { 
-        body: JSON.stringify(req.body).substring(0, 500), // Limit output size
-        orderData: orderData ? JSON.stringify(orderData).substring(0, 500) : null // Limit output size
-      });
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Order must contain at least one item',
-        debug: {
-          receivedFields: Object.keys(req.body),
-          orderDataFields: orderData ? Object.keys(orderData) : null
-        }
-      });
-    }
-
-    // Find or create customer by phone/email only if not already set via customerId
-    if (!customer && (customerPhone || customerEmail)) {
-      // Try to find existing customer by phone or email
-      customer = await Customer.findOne({
-        where: {
-          [Op.or]: [
-            customerPhone ? { phone: customerPhone } : null,
-            customerEmail ? { email: customerEmail } : null
-          ].filter(Boolean)
-        },
-        transaction
-      });
-
-      // If customer doesn't exist, create a new one
-      if (!customer && (customerName || customerPhone || customerEmail)) {
-        customer = await Customer.create({
-          name: customerName || 'Online Customer',
-          phone: customerPhone,
-          email: customerEmail,
-        }, { transaction });
-      }
-    }
-
-    // If customerId was provided explicitly and we didn't find/create by phone/email, use it
-    if (!customer && customerId) {
-      try {
-        const foundById = await Customer.findByPk(customerId, { transaction });
-        if (foundById) {
-          customer = foundById;
-        } else {
-          console.warn(`Provided customerId ${customerId} not found; proceeding without customer linkage`);
-        }
-      } catch (e) {
-        console.warn('Failed to lookup provided customerId:', e?.message || e);
-      }
-    }
-
-    // Process transaction image if provided
+    // Handle transaction image (supports express-fileupload and multer)
     let transactionImagePath = null;
-    try {
-      // If a file is uploaded via FormData (express-fileupload)
-      if (req.files && req.files.transactionImage) {
-        const transactionImage = req.files.transactionImage;
-        const fileExt = path.extname(transactionImage.name);
+    if (req.files && req.files.transactionImage) {
+      const f = req.files.transactionImage;
+      const fileExt = path.extname(f.name);
+      const fileName = `transaction_${uuidv4()}${fileExt}`;
+      const uploadPath = path.join(uploadDir, fileName);
+      await f.mv(uploadPath);
+      transactionImagePath = fileName;
+    } else if (req.file) {
+      try {
+        const fileExt = path.extname(req.file.originalname || '');
         const fileName = `transaction_${uuidv4()}${fileExt}`;
-
-        // Ensure uploadDir exists
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
+        const destPath = path.join(uploadDir, fileName);
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          fs.copyFileSync(req.file.path, destPath);
+        } else if (req.file.buffer) {
+          fs.writeFileSync(destPath, req.file.buffer);
         }
-
-        const uploadPath = path.join(uploadDir, fileName);
-
-        // Move the file to the upload directory
-        await transactionImage.mv(uploadPath);
         transactionImagePath = fileName;
-      } else if (req.file) {
-        // Support multer: single file under req.file
-        try {
-          const fileExt = path.extname(req.file.originalname || '');
-          const fileName = `transaction_${uuidv4()}${fileExt}`;
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-          }
-          const destPath = path.join(uploadDir, fileName);
-          if (req.file.path && fs.existsSync(req.file.path)) {
-            fs.copyFileSync(req.file.path, destPath);
-          } else if (req.file.buffer) {
-            fs.writeFileSync(destPath, req.file.buffer);
-          } else {
-            console.warn('req.file provided without path or buffer; skipping file save');
-          }
-          transactionImagePath = fileName;
-        } catch (multerErr) {
-          console.error('Error processing multer file:', multerErr);
-        }
-      } else {
-        // Fallback: accept transaction_image string path from body
-        const providedImage = (orderData && (orderData.transaction_image || orderData.transactionImage)) || null;
-        if (providedImage && typeof providedImage === 'string') {
-          // Normalize to filename stored in DB
-          transactionImagePath = path.basename(providedImage);
-        }
-
-        // Only require receipt image for mobile or online payments if none provided
-        // Make this check less strict - only enforce for mobile_payment
-        if (paymentMethod === 'mobile_payment' && !transactionImagePath) {
-          await transaction.rollback();
-          return res.status(400).json({
-            success: false,
-            message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف المحمول',
-          });
-        }
-        
-        // For online payments, log warning but don't block the order
-        if (paymentMethod === 'online' && !transactionImagePath) {
-          console.warn('Online payment order submitted without transaction image');
-        }
+      } catch (multerErr) {
+        console.error('Error processing multer file:', multerErr);
       }
-    } catch (imageError) {
-      console.error('Error processing transaction image:', imageError);
-      // Log detailed error information
-      console.error('Image processing error details:', {
-        message: imageError.message,
-        stack: imageError.stack,
-        requestBody: req.body ? Object.keys(req.body) : 'No body',
-        requestFiles: req.files ? Object.keys(req.files) : 'No files'
-      });
-      
-      // Don't fail the entire transaction for image processing errors
-      // Just log the error and continue without an image
-      console.warn('Continuing order creation without transaction image due to processing error');
-    }
-    
-    // Safety guard: ensure valid UUID customer id before linking
-    if (customer && (!customer.id || typeof customer.id !== 'string' || !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(customer.id))) {
-      console.warn('Invalid customer.id format; omitting customerId in sale creation:', customer.id);
-      customer = null;
-    }
-
-    // Extra safety: verify customer exists in database before linking
-    if (customer && customer.id) {
-      try {
-        const customerExists = await Customer.findByPk(customer.id, { transaction, attributes: ['id'] });
-        if (!customerExists) {
-          console.warn(`Customer with ID ${customer.id} not found in database, skipping linkage`);
-          customer = null;
-        }
-      } catch (err) {
-        console.error('Error verifying customer existence:', err.message);
-        customer = null;
+    } else {
+      const providedImage = (orderData && (orderData.transaction_image || orderData.transactionImage)) || null;
+      if (providedImage && typeof providedImage === 'string') {
+        transactionImagePath = path.basename(providedImage);
       }
     }
 
-    // Handle customerId from request if customer object is not available
-    if (!customer && customerId) {
-      try {
-        // Try to find the customer by the provided ID
-        const foundCustomer = await Customer.findByPk(customerId, { transaction, attributes: ['id', 'name', 'email', 'phone'] });
-        if (foundCustomer) {
-          customer = foundCustomer;
-          console.log(`Found customer by ID: ${customer.id}, name: ${customer.name}`);
-        } else {
-          console.warn(`Customer with ID ${customerId} not found, creating sale without customer link`);
-        }
-      } catch (err) {
-        console.error('Error finding customer by ID:', err.message);
-      }
+    // Require receipt image only for mobile payments
+    if (paymentMethod === 'mobile_payment' && !transactionImagePath) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: 'صورة إيصال الدفع مطلوبة لطرق الدفع عبر الهاتف المحمول' });
     }
 
-    // Create the sale record
+    // Totals and amounts
+    const subtotalNum = items.reduce((sum, it) => sum + ((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice ?? it.price) || 0)), 0);
+    const taxAmountNum = Number.isFinite(parseFloat(orderData.tax)) ? parseFloat(orderData.tax) : 0;
+    const discountAmountNum = Number.isFinite(parseFloat(orderData.discount)) ? parseFloat(orderData.discount) : 0;
+    const totalAmountNum = Number.isFinite(parseFloat(total)) ? parseFloat(total) : (subtotalNum + taxAmountNum - discountAmountNum);
+
+    const deliveryAddress = orderData.deliveryAddress || customerData.address || '';
+    const customerName = customerData.name || '';
+    const customerPhone = customerData.phone || '';
+    const customerEmail = customerData.email || '';
+    const paymentStatus = orderData.paymentStatus || 'pending';
+    const notes = orderData.notes || '';
+
     const sale = await Sale.create({
-      // Only set customerId if we're sure the customer exists
       customerId: customer.id,
-      userId: req.user.id,
+      userId: req.user?.id || null,
       subtotal: subtotalNum,
       taxAmount: taxAmountNum,
       discountAmount: discountAmountNum,
       totalAmount: totalAmountNum,
-      paymentMethod: paymentMethod || 'cash',
-      paymentStatus: paymentStatus || 'pending',
-      status: 'pending', // Initial status for online orders
-      notes: notes || '',
+      paymentMethod,
+      paymentStatus,
+      status: 'pending',
+      notes,
       transactionImage: transactionImagePath,
-      deliveryAddress: deliveryAddress || '',
-      customerName: customerName || '',
-      customerPhone: customerPhone || '',
-      customerEmail: customerEmail || '',
-      source: 'online', // Mark as online order
-      // Store additional customer information for later use when accepting the order
+      deliveryAddress,
+      customerName,
+      customerPhone,
+      customerEmail,
+      source: 'online',
       type: 'online'
-    }, { transaction });
-    
-    // Create sale items
-    if (items && items.length > 0) {
-      const saleItems = items.map(item => {
-        const quantity = parseFloat(item.quantity) || 0;
-        const unitPrice = (parseFloat(item.unitPrice) || parseFloat(item.price) || 0);
-        const discount = parseFloat(item.discount) || 0;
-        // Calculate subtotal as quantity * unitPrice
-        const subtotal = quantity * unitPrice;
-        
-        return {
-          saleId: sale.id,
-          productId: item.productId || item.id || item.product_id,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          discount: discount,
-          subtotal: subtotal,
-          totalPrice: parseFloat(item.totalPrice) || subtotal - discount,
-          notes: item.notes || '',
-        };
-      });
-      
-      await SaleItem.bulkCreate(saleItems, { transaction });
-    }
+    }, { transaction: t });
 
-    // Create notification for new online order for all admin users
-    // Convert UUID to numeric ID for relatedId
+    const saleItems = items.map(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice ?? item.price) || 0;
+      const discount = parseFloat(item.discount) || 0;
+      const subtotal = quantity * unitPrice;
+      return {
+        saleId: sale.id,
+        productId: item.productId || item.id || item.product_id,
+        quantity,
+        unitPrice,
+        discount,
+        subtotal,
+        totalPrice: parseFloat(item.totalPrice) || (subtotal - discount),
+        notes: item.notes || '',
+      };
+    });
+
+    await SaleItem.bulkCreate(saleItems, { transaction: t });
+
     const saleIdNumeric = uuidToNumericId(sale.id);
     await notificationController.createSystemNotification({
-      // userId is not provided to send to all admin users
       type: 'new_order',
       title: 'New Online Order',
       message: `New online order #${sale.id} received`,
-      relatedId: saleIdNumeric, // Use numeric ID derived from UUID
+      relatedId: saleIdNumeric,
       relatedType: 'sale',
-    }, transaction);
+    }, t);
 
-    await transaction.commit();
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        id: sale.id,
-        orderNumber: sale.id,
-        status: 'pending',
-        message: 'Order created successfully',
-      },
-    });
-  } catch (err) {
-    await transaction.rollback();
-    
-    // طباعة تفاصيل المشكلة
-    console.error("🔥 خطأ أثناء إنشاء الطلب:");
-    console.error("📌 الرسالة:", err.message);
-    console.error("📌 النوع:", err.name);
-    if (err.errors) {
-      console.error("📌 تفاصيل الحقول:", err.errors.map(e => ({
-        message: e.message,
-        path: e.path,
-        value: e.value
-      })));
-    }
-    console.error("📌 الكود كامل:", err);
-    
-    // تحقق من نوع الخطأ لإرسال رسالة مناسبة
-    if (err.name === 'SequelizeForeignKeyConstraintError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'خطأ في البيانات، العميل أو المنتج غير موجود',
-        error: err.message
-      });
-    }
-    if (err.name === 'SequelizeValidationError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: "بيانات الطلب غير صحيحة، تأكد من إدخال جميع البيانات المطلوبة بشكل صحيح",
-        error: err.message
-      });
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: "فشل إنشاء الطلب، راجع السيرفر Console للتفاصيل",
-      error: err.message
-    });
+    await t.commit();
+    return res.status(201).json({ success: true, data: { id: sale.id, orderNumber: sale.id, status: 'pending', message: 'تم إنشاء الطلب بنجاح' } });
+  } catch (error) {
+    await t.rollback();
+    console.error('Error in createOrderWithImage:', error);
+    return res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء إنشاء الطلب', error: error.message });
   }
 };

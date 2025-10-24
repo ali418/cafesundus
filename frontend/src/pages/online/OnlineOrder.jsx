@@ -617,25 +617,12 @@ const OnlineOrder = () => {
         }
       }
       
-      // Check if customer exists or create new customer
-      const customer = await checkAndCreateCustomer({
-        name: customerInfo.name,
-        phone: customerInfo.phone,
-        email: customerInfo.email,
-        address: customerInfo.address
-      });
-      
       // Create form data for file upload
       const formData = new FormData();
       
-      // Prepare order data
+      // Prepare order data as a single payload (no pre-customer call)
       const orderData = {
-        items: cartItems.map(item => ({
-          productId: item.id,
-          quantity: item.quantity,
-          unitPrice: item.price
-        })),
-        customerInfo: {
+        customerData: {
           name: customerInfo.name,
           phone: customerInfo.phone,
           email: customerInfo.email,
@@ -643,36 +630,35 @@ const OnlineOrder = () => {
           paymentMethod: customerInfo.paymentMethod,
           mobilePaymentProvider: customerInfo.mobilePaymentProvider
         },
+        cartItems: cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          unitPrice: item.price
+        })),
         subtotal,
         tax,
         total,
-        orderType: 'online'
+        orderType: 'online',
+        paymentMethod: customerInfo.paymentMethod,
+        deliveryAddress: customerInfo.address || ''
       };
-      
-      // Only include customerId if we have a valid customer with id
-      // This is critical for the foreign key constraint
-      if (customer && customer.id) {
-        console.log('Adding valid customer ID to order:', customer.id);
-        orderData.customerId = customer.id;
-      } else {
-        console.log('No valid customer ID available, order will be created without customer reference');
-      }
       
       // Add order data to form
       formData.append('orderData', JSON.stringify(orderData));
 
-      // Add transaction image if available (must be a File)
+      // Add transaction image (must be a File)
       if (!customerInfo.transactionImage || !(customerInfo.transactionImage instanceof File)) {
         toast.error(t('pleaseUploadReceiptImage', 'الرجاء اختيار صورة إيصال الدفع أولاً'));
+        setOrderSubmitting(false);
         return;
       }
       formData.append('transactionImage', customerInfo.transactionImage, customerInfo.transactionImage.name);
 
       // Debug: print request payload before sending
       try {
-        console.log('Creating order with data:', {
-          customerId: orderData.customerId || null,
-          cartItems: orderData.items,
+        console.log('Creating order with data (single request):', {
+          customerPhone: orderData.customerData.phone,
+          itemsCount: orderData.cartItems.length,
           total,
           image: customerInfo.transactionImage ? customerInfo.transactionImage.name : 'No image selected',
         });
