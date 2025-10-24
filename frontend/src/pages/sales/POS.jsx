@@ -84,8 +84,8 @@ const getProductImageUrl = (product) => {
       // إذا كان نفس الأصل (scheme + host + port) نُبقيه كما هو، وإلا نُحاول تحويله لمسار نسبي إذا كان ضمن uploads
       if (url.origin === window.location.origin) return img;
       if (url.pathname.startsWith('/uploads/')) return url.pathname;
-      // روابط خارجية ستتعارض غالبًا مع سياسة CSP الحالية، فنعرض صورة بديلة
-      return placeholderImage;
+      // للروابط الخارجية، نستخدمها مباشرة لأن الصور قد تكون مخزنة على خوادم أخرى
+      return img;
     } catch {
       // لو فشل التحليل نُكمل المعالجة أدناه
     }
@@ -97,9 +97,8 @@ const getProductImageUrl = (product) => {
 
   // Likely a filename
   if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) {
-    // في بيئة الإنتاج، نحتاج إلى استخدام المسار الكامل للصورة
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/uploads/${img}`;
+    // في بيئة الإنتاج، نحتاج إلى استخدام المسار النسبي للصورة
+    return `/uploads/${img}`;
   }
 
   return placeholderImage;
