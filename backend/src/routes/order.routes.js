@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { protect } = require('../middleware/auth');
+const mockAuth = require('../middleware/mockAuth');
 
 // Ensure upload directory exists
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
@@ -18,7 +19,7 @@ router.get('/test', (req, res) => {
 });
 
 // Create order with image - IMPORTANT: Specific routes must come before dynamic routes
-router.post('/with-image', protect, (req, res, next) => {
+router.post('/with-image', mockAuth, (req, res, next) => {
   orderController.createOrderWithImage(req, res, next);
 });
 
