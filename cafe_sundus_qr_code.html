@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كافيه سندس - رمز QR للطلب عبر الإنترنت | Cafe Sundus - Online Order QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            direction: rtl;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 243, 68, 0.1);
+        }
+        h1 {
+            color: #000000;
+            margin-bottom: 30px;
+        }
+        .qr-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(3, 3, 1, 0.1);
+            position: relative;
+        }
+        #qrcode {
+            margin: 0 auto;
+            width: 300px;
+            height: 300px;
+        }
+        .logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 0 5px rgba(245, 4, 4, 0.986);
+        }
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #141301;
+        }
+        .url {
+            color: #070705;
+            font-weight: bold;
+            font-size: 20px;
+            margin: 15px 0;
+        }
+        .buttons {
+            margin-top: 30px;
+        }
+        button {
+            background-color: #5efa5e;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #000000;
+        }
+        .print-area {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .buttons {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>كافيه سندس - رمز QR للطلب عبر الإنترنت<br><span style="font-size: 0.9em;">Cafe Sundus - Online Order QR Code</span></h1>
+        
+        <div class="print-area" id="printArea">
+            <div class="qr-container" id="qrContainer">
+                <div id="qrcode"></div>
+                <div class="logo" style="z-index: 1000; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(0,0,0,0.2);">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzRhMWUxZSIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U3VuZHVzPC90ZXh0Pjx0ZXh0IHg9IjUwIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Y2FmZTwvdGV4dD48L3N2Zz4=" alt="شعار كافيه سندس - Cafe Sundus Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+            </div>
+            
+            <div class="info">
+                <p>امسح رمز QR للطلب عبر الإنترنت<br><span style="font-size: 0.9em;">Scan QR code for online ordering</span></p>
+                <p class="url">cafesundus.up.railway.app/online-order</p>
+            </div>
+        </div>
+        
+        <div class="buttons">
+             <button onclick="window.print()">طباعة / Print</button>
+             <button onclick="generatePDF()">تحميل كملف PDF / Download as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // عنوان URL للطلب عبر الإنترنت
+        const orderUrl = "https://cafesundus.up.railway.app/online-order";
+        
+        // إنشاء رمز QR عند تحميل الصفحة
+        window.onload = function() {
+            // خيارات رمز QR
+            const qrOptions = {
+                errorCorrectionLevel: 'H', // مستوى تصحيح الأخطاء العالي للسماح بوضع الشعار
+                margin: 1,
+                width: 300,
+                color: {
+                    dark: '#4a1e1e', // لون الرمز (بني داكن)
+                    light: '#ffffff'  // لون الخلفية (أبيض)
+                }
+            };
+            
+            // إنشاء رمز QR
+            try {
+                // محاولة استخدام toCanvas أولاً
+                QRCode.toCanvas(document.getElementById('qrcode'), orderUrl, qrOptions, function (error) {
+                    if (error) {
+                        console.error('خطأ في إنشاء رمز QR باستخدام Canvas:', error);
+                        // إذا فشل Canvas، استخدم toDataURL
+                        QRCode.toDataURL(orderUrl, qrOptions, function (err, url) {
+                            if (err) {
+                                console.error('خطأ في إنشاء رمز QR باستخدام DataURL:', err);
+                                return;
+                            }
+                            // إنشاء عنصر صورة وإضافته إلى العنصر المحدد
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.width = 300;
+                            img.height = 300;
+                            const qrcodeElement = document.getElementById('qrcode');
+                            qrcodeElement.innerHTML = '';
+                            qrcodeElement.appendChild(img);
+                            console.log('تم إنشاء رمز QR باستخدام DataURL بنجاح!');
+                        });
+                    } else {
+                        console.log('تم إنشاء رمز QR باستخدام Canvas بنجاح!');
+                    }
+                });
+            } catch (e) {
+                console.error('خطأ عام في إنشاء رمز QR:', e);
+                // استخدام طريقة أخرى في حالة حدوث خطأ
+                const qrcodeElement = document.getElementById('qrcode');
+                qrcodeElement.innerHTML = '';
+                new QRCode(qrcodeElement, {
+                    text: orderUrl,
+                    width: 300,
+                    height: 300,
+                    colorDark: '#4a1e1e',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                console.log('تم إنشاء رمز QR باستخدام الطريقة البديلة بنجاح!');
+            }
+        };
+        
+        // دالة لتحميل الرمز كملف PDF
+        function generatePDF() {
+            try {
+                // التأكد من وجود مكتبة jsPDF
+                if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+                    alert("مكتبة jsPDF غير متوفرة. يرجى تحديث الصفحة والمحاولة مرة أخرى.");
+                    return;
+                }
+                
+                // إنشاء ملف PDF
+                const { jsPDF } = window.jspdf || window;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                // إضافة خط دعم اللغة العربية
+                pdf.addFont("https://cdn.jsdelivr.net/npm/@typopro/web-noto/TypoPRO-Noto-Sans-Arabic-Regular.ttf", "NotoSansArabic", "normal");
+                pdf.addFont("https://cdn.jsdelivr.net/npm/@typopro/web-noto/TypoPRO-Noto-Sans-Arabic-Bold.ttf", "NotoSansArabic", "bold");
+                
+                // إضافة العنوان باللغة الإنجليزية
+                pdf.setFont("Helvetica", "bold");
+                pdf.setFontSize(22);
+                pdf.text("Cafe Sundus", 105, 20, { align: "center" });
+                
+                // إضافة النص التوضيحي باللغة الإنجليزية
+                pdf.setFontSize(16);
+                pdf.text("Online Order QR Code", 105, 30, { align: "center" });
+                
+                // إنشاء رمز QR على canvas مباشرة
+                const canvas = document.createElement('canvas');
+                canvas.width = 250;
+                canvas.height = 250;
+                
+                // إنشاء رمز QR على canvas
+                QRCode.toCanvas(canvas, orderUrl, {
+                    width: 250,
+                    height: 250,
+                    margin: 1,
+                    color: {
+                        dark: "#000000",
+                        light: "#ffffff"
+                    },
+                    errorCorrectionLevel: 'H'
+                }, function(error) {
+                    if (error) {
+                        console.error("Error creating QR code:", error);
+                        alert("حدث خطأ أثناء إنشاء رمز QR. يرجى المحاولة مرة أخرى.");
+                        return;
+                    }
+                    
+                    // إضافة نص Cafe Sundus في وسط الباركود بألوان ذهبية وسوداء
+                    const ctx = canvas.getContext('2d');
+                    
+                    // إنشاء دائرة بيضاء في الوسط (حافة خارجية)
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(125, 125, 38, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // إضافة خلفية دائرية سوداء
+                    ctx.fillStyle = "#000000"; // لون أسود
+                    ctx.beginPath();
+                    ctx.arc(125, 125, 35, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // إضافة تأثير لامع للأسود (gradient)
+                    const gradient = ctx.createRadialGradient(115, 115, 5, 125, 125, 35);
+                    gradient.addColorStop(0, "#333333"); // لون رمادي داكن في المركز
+                    gradient.addColorStop(0.5, "#1a1a1a"); // لون أسود متوسط
+                    gradient.addColorStop(1, "#000000"); // لون أسود داكن عند الحواف
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(125, 125, 35, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // إضافة النص باللون الأبيض
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 16px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Sundus", 125, 120);
+                    ctx.fillText("cafe", 125, 140);
+                    
+                    // تحويل Canvas إلى صورة بجودة عالية للحفاظ على الألوان
+                    const qrImageData = canvas.toDataURL('image/png', 1.0);
+                    
+                    // إضافة رمز QR إلى ملف PDF مع تحسين الجودة
+                    pdf.addImage(qrImageData, 'PNG', 55, 40, 100, 100, undefined, 'FAST');
+                    
+                    // إضافة تعليمات المسح باللغة الإنجليزية
+                    pdf.setFontSize(14);
+                    pdf.text("Scan the QR code to order online", 105, 150, { align: "center" });
+                    pdf.text("www.cafesundus.cafe/online-order", 105, 160, { align: "center" });
+                    
+                    // تنزيل ملف PDF
+                    pdf.save("cafe_sundus_qr_code.pdf");
+                });
+            } catch (error) {
+                console.error("Error in PDF generation:", error);
+                alert("حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.");
+            }
+        }
+    </script>
+</body>
+</html>

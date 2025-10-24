@@ -653,6 +653,13 @@ exports.createOrderWithImage = async (req, res, next) => {
       console.warn('Continuing order creation without transaction image due to processing error');
     }
     
+    // ... existing code ...
+    // Safety guard: ensure valid UUID customer id before linking
+    if (customer && (!customer.id || typeof customer.id !== 'string' || !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(customer.id))) {
+      console.warn('Invalid customer.id format; omitting customerId in sale creation:', customer.id);
+      customer = null;
+    }
+
     // Create the sale record
     const sale = await Sale.create({
       // Only set customerId if we're sure the customer exists

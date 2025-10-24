@@ -44,20 +44,8 @@ exports.findUuidByNumericId = async (numericId, model, maxDigits = 9) => {
   try {
     // Convert numericId to a number if it's a string
     const targetId = parseInt(numericId, 10);
-    
-    // إذا كان الرقم كبيرًا جدًا، نبحث عن السجل مباشرة بالمعرف
-    if (targetId > 999999) {
-      try {
-        // محاولة البحث عن السجل مباشرة باستخدام المعرف الرقمي كمعرف فريد
-        const directRecord = await model.findByPk(numericId.toString());
-        if (directRecord) {
-          return directRecord.id;
-        }
-      } catch (error) {
-        console.error('Error finding record by numeric ID:', error);
-      }
-    }
-    
+    if (Number.isNaN(targetId)) return null;
+
     // Get only the IDs from the model for better performance
     const records = await model.findAll({
       attributes: ['id'],
@@ -75,7 +63,7 @@ exports.findUuidByNumericId = async (numericId, model, maxDigits = 9) => {
     
     return null;
   } catch (error) {
-    console.error('Error finding UUID by numeric ID:', error);
+    console.error('Error finding UUID by numeric ID:', error?.message || error);
     return null;
   }
 };
