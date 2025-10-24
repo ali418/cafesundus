@@ -485,6 +485,25 @@ exports.createOrderWithImage = async (req, res, next) => {
     // Final log for customerId
     console.log('DEBUG final customerId:', customerId);
 
+    // Strict validation: require valid customerId and customer existence
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!customerId || (typeof customerId === 'string' && !uuidRegex.test(customerId.trim()))) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'بيانات العميل (customerId) مفقودة أو غير صحيحة'
+      });
+    }
+    const customerExistsRecord = await Customer.findByPk(customerId, { transaction, attributes: ['id','name','email','phone'] });
+    if (!customerExistsRecord) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'العميل غير موجود، لا يمكن إنشاء الطلبية'
+      });
+    }
+    let customer = customerExistsRecord;
+
     // Compute numeric totals with fallbacks (accept tax/total from frontend if provided)
     const subtotalNum = Number.isFinite(parseFloat(subtotal))
       ? parseFloat(subtotal)
@@ -535,6 +554,18 @@ exports.createOrderWithImage = async (req, res, next) => {
           items = orderData.orderItems;
           console.log('Found items array in orderData.orderItems');
         }
+      } else if (orderData && orderData.cartItems) {
+        if (typeof orderData.cartItems === 'string') {
+          try {
+            items = JSON.parse(orderData.cartItems);
+            console.log('Successfully parsed cartItems from string:', items);
+          } catch (parseError) {
+            console.error('Failed to parse cartItems string:', parseError);
+          }
+        } else if (Array.isArray(orderData.cartItems)) {
+          items = orderData.cartItems;
+          console.log('Found items array in orderData.cartItems');
+        }
       } else if (req.body.items) {
         if (typeof req.body.items === 'string') {
           try {
@@ -570,9 +601,8 @@ exports.createOrderWithImage = async (req, res, next) => {
       });
     }
 
-    // Find or create customer if customer data is provided
-    let customer = null;
-    if (customerPhone || customerEmail) {
+    // Find or create customer by phone/email only if not already set via customerId
+    if (!customer && (customerPhone || customerEmail)) {
       // Try to find existing customer by phone or email
       customer = await Customer.findOne({
         where: {
@@ -611,7 +641,7 @@ exports.createOrderWithImage = async (req, res, next) => {
     // Process transaction image if provided
     let transactionImagePath = null;
     try {
-      // If a file is uploaded via FormData
+      // If a file is uploaded via FormData (express-fileupload)
       if (req.files && req.files.transactionImage) {
         const transactionImage = req.files.transactionImage;
         const fileExt = path.extname(transactionImage.name);
@@ -627,6 +657,26 @@ exports.createOrderWithImage = async (req, res, next) => {
         // Move the file to the upload directory
         await transactionImage.mv(uploadPath);
         transactionImagePath = fileName;
+      } else if (req.file) {
+        // Support multer: single file under req.file
+        try {
+          const fileExt = path.extname(req.file.originalname || '');
+          const fileName = `transaction_${uuidv4()}${fileExt}`;
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const destPath = path.join(uploadDir, fileName);
+          if (req.file.path && fs.existsSync(req.file.path)) {
+            fs.copyFileSync(req.file.path, destPath);
+          } else if (req.file.buffer) {
+            fs.writeFileSync(destPath, req.file.buffer);
+          } else {
+            console.warn('req.file provided without path or buffer; skipping file save');
+          }
+          transactionImagePath = fileName;
+        } catch (multerErr) {
+          console.error('Error processing multer file:', multerErr);
+        }
       } else {
         // Fallback: accept transaction_image string path from body
         const providedImage = (orderData && (orderData.transaction_image || orderData.transactionImage)) || null;
@@ -704,7 +754,7 @@ exports.createOrderWithImage = async (req, res, next) => {
     // Create the sale record
     const sale = await Sale.create({
       // Only set customerId if we're sure the customer exists
-      customerId: customer ? customer.id : null,
+      customerId: customer.id,
       userId: req.user.id,
       subtotal: subtotalNum,
       taxAmount: taxAmountNum,
@@ -728,14 +778,14 @@ exports.createOrderWithImage = async (req, res, next) => {
     if (items && items.length > 0) {
       const saleItems = items.map(item => {
         const quantity = parseFloat(item.quantity) || 0;
-        const unitPrice = parseFloat(item.unitPrice) || 0;
+        const unitPrice = (parseFloat(item.unitPrice) || parseFloat(item.price) || 0);
         const discount = parseFloat(item.discount) || 0;
         // Calculate subtotal as quantity * unitPrice
         const subtotal = quantity * unitPrice;
         
         return {
           saleId: sale.id,
-          productId: item.productId,
+          productId: item.productId || item.id || item.product_id,
           quantity: quantity,
           unitPrice: unitPrice,
           discount: discount,
@@ -788,7 +838,14 @@ exports.createOrderWithImage = async (req, res, next) => {
     console.error("📌 الكود كامل:", err);
     
     // تحقق من نوع الخطأ لإرسال رسالة مناسبة
-    if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeForeignKeyConstraintError') {
+    if (err.name === 'SequelizeForeignKeyConstraintError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'خطأ في البيانات، العميل أو المنتج غير موجود',
+        error: err.message
+      });
+    }
+    if (err.name === 'SequelizeValidationError') {
       return res.status(400).json({ 
         success: false, 
         message: "بيانات الطلب غير صحيحة، تأكد من إدخال جميع البيانات المطلوبة بشكل صحيح",
