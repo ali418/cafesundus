@@ -738,7 +738,8 @@ const OnlineOrder = () => {
                 '&:hover': {
                   transform: 'translateY(-10px)',
                   boxShadow: '0 16px 24px rgba(0, 0, 0, 0.15)'
-                }
+                },
+                position: 'relative'
               }}
               onClick={() => addToCart(product)}
             >
@@ -829,6 +830,34 @@ const OnlineOrder = () => {
                   </IconButton>
                 </Box>
               </CardContent>
+              
+              {/* Tooltip to show product description on hover */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  bgcolor: 'rgba(0,0,0,0.8)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                  padding: 2,
+                  textAlign: 'center',
+                  zIndex: 10,
+                  '&:hover': {
+                    opacity: 1
+                  }
+                }}
+              >
+                <Typography variant="body1">
+                  {product.description || t('noDescription', 'لا يوجد وصف متاح')}
+                </Typography>
+              </Box>
             </Card>
           </Grid>
         ))}
@@ -1691,7 +1720,18 @@ const OnlineOrder = () => {
               Cafe Sundus
             </Typography>
           </Box>
-          <LanguageSwitcher />
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton 
+              color="inherit" 
+              onClick={() => setActiveStep(1)}
+              sx={{ mr: 1 }}
+            >
+              <Badge badgeContent={cartItems.length} color="error">
+                <ShoppingCart />
+              </Badge>
+            </IconButton>
+            <LanguageSwitcher />
+          </Box>
         </Toolbar>
       </AppBar>
       

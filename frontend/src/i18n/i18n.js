@@ -4,8 +4,8 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 
 // Get user language preference from localStorage or default to 'en'
- // Default to Arabic if no saved preference is found
-const savedLanguage = localStorage.getItem('language') || localStorage.getItem('preferredLanguage') || 'ar';
+// Default to English if no saved preference is found
+const savedLanguage = localStorage.getItem('language') || localStorage.getItem('preferredLanguage') || 'en';
 
 // Create a global variable to track translation loading errors
 window.i18nErrors = {
