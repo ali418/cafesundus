@@ -393,7 +393,23 @@ exports.createOrderWithImage = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'بيانات العميل أو رقم الهاتف مفقودة' });
     }
 
-    // Find or create customer within the same transaction
+    // Explicitly ignore any client-provided ID
+    if (customerData.id) {
+      try {
+        console.warn('Ignoring client-supplied customerData.id:', customerData.id);
+      } catch (_) {}
+      delete customerData.id;
+    }
+
+    // Also guard against nested id in orderData
+    if (orderData.customerId) {
+      try {
+        console.warn('Ignoring client-supplied orderData.customerId:', orderData.customerId);
+      } catch (_) {}
+      delete orderData.customerId;
+    }
+
+    // Find or create customer within the same transaction using phone only
     const [customer] = await Customer.findOrCreate({
       where: { phone: String(customerData.phone || '').trim() },
       defaults: {
@@ -403,6 +419,20 @@ exports.createOrderWithImage = async (req, res, next) => {
       },
       transaction: t,
     });
+
+    // Double-check the resolved customer actually exists in DB before referencing
+    const verifiedCustomer = await Customer.findByPk(customer.id, { transaction: t, paranoid: false });
+    if (!verifiedCustomer) {
+      // As a fallback, create a fresh customer row and use its ID
+      const fallbackCustomer = await Customer.create({
+        name: (customerData.name || 'عميل جديد').trim(),
+        phone: String(customerData.phone || '').trim(),
+        email: (customerData.email || '').trim() || null,
+        address: customerData.address || null,
+      }, { transaction: t });
+      console.warn('Customer verification failed; created fallback customer:', fallbackCustomer.id);
+      customer.id = fallbackCustomer.id;
+    }
 
     // Normalize items
     let items = Array.isArray(cartItems) ? cartItems : (Array.isArray(orderData.items) ? orderData.items : []);
@@ -467,6 +497,11 @@ exports.createOrderWithImage = async (req, res, next) => {
     const customerEmail = customerData.email || '';
     const paymentStatus = orderData.paymentStatus || 'pending';
     const notes = orderData.notes || '';
+
+    // Log to confirm safe customer ID used
+    try {
+      console.log('Creating Sale with safe customer ID:', { customerId: customer.id, phone: customerPhone });
+    } catch (_) {}
 
     const sale = await Sale.create({
       customerId: customer.id,
