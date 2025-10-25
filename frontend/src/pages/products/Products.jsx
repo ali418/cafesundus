@@ -298,7 +298,7 @@ const Products = () => {
     // إنشاء نافذة طباعة جديدة
     const printWindow = window.open('', '_blank');
     
-    // إنشاء محتوى HTML للطباعة
+    // إنشاء محتوى HTML للطباعة بدون inline scripts
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -331,7 +331,6 @@ const Products = () => {
             }
           }
         </style>
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
       </head>
       <body>
         <div class="barcode-container">
@@ -339,19 +338,11 @@ const Products = () => {
           <div class="barcode-number">${barcode}</div>
         </div>
         <div class="no-print">
-          <button onclick="window.print()">طباعة</button>
-          <button onclick="window.close()">إغلاق</button>
+          <button id="printBtn">طباعة</button>
+          <button id="closeBtn">إغلاق</button>
         </div>
         
-        <script>
-          // توليد الباركود باستخدام مكتبة JsBarcode
-          JsBarcode("#barcode", "${barcode}", {
-            format: "CODE128",
-            width: 2,
-            height: 50,
-            displayValue: false
-          });
-        </script>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js" nonce="barcode-script"></script>
       </body>
       </html>
     `;
@@ -360,6 +351,31 @@ const Products = () => {
     printWindow.document.open();
     printWindow.document.write(printContent);
     printWindow.document.close();
+    
+    // انتظار تحميل المكتبة ثم تنفيذ الكود
+    printWindow.onload = () => {
+      // توليد الباركود باستخدام مكتبة JsBarcode
+      if (printWindow.JsBarcode) {
+        printWindow.JsBarcode("#barcode", barcode, {
+          format: "CODE128",
+          width: 2,
+          height: 50,
+          displayValue: false
+        });
+      }
+      
+      // إضافة event listeners للأزرار
+      const printBtn = printWindow.document.getElementById('printBtn');
+      const closeBtn = printWindow.document.getElementById('closeBtn');
+      
+      if (printBtn) {
+        printBtn.addEventListener('click', () => printWindow.print());
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => printWindow.close());
+      }
+    };
   };
   
   return (

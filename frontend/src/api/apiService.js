@@ -191,7 +191,10 @@ const apiService = {
 
       // Do NOT set Content-Type manually for FormData.
       // Let the browser/XHR add the correct multipart boundary.
-      const response = await axiosInstance.post('/orders/with-image', formData);
+      // Increase timeout for order creation to 30 seconds
+      const response = await axiosInstance.post('/orders/with-image', formData, {
+        timeout: 30000 // 30 seconds timeout for order creation
+      });
       console.log('✅ Order created successfully:', response.data);
       return response.data.data || response.data;
     } catch (error) {

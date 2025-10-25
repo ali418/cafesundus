@@ -48,7 +48,21 @@ const db = require('./models');
 const app = express();
 
 // Set up middleware
-app.use(helmet()); // Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+})); // Security headers with relaxed CSP for development
 app.use(compression()); // Compress responses
 // Improve CORS to accept multiple origins from env (comma-separated)
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,https://cafesundus.up.railway.app,https://cafesundus-production.up.railway.app')
