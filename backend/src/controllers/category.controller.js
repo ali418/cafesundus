@@ -8,7 +8,9 @@ const { Category, Product, Sequelize } = require('../models');
  */
 exports.getAllCategories = async (req, res, next) => {
   try {
-    const categories = await Category.findAll();
+    const categories = await Category.findAll({
+      order: [['display_order', 'ASC'], ['created_at', 'ASC']]
+    });
 
     // Build a map of product counts by category name in a single grouped query
     const categoryNames = categories.map((c) => c.name).filter(Boolean);
@@ -40,6 +42,48 @@ exports.getAllCategories = async (req, res, next) => {
       success: true,
       count: result.length,
       data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update categories display order
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+exports.updateCategoriesOrder = async (req, res, next) => {
+  try {
+    const { categories } = req.body;
+    
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Categories must be an array',
+      });
+    }
+    
+    // Update display_order for each category
+    const updatePromises = categories.map((cat, index) => {
+      return Category.update(
+        { display_order: index },
+        { where: { id: cat.id } }
+      );
+    });
+    
+    await Promise.all(updatePromises);
+    
+    // Return updated categories in order
+    const updatedCategories = await Category.findAll({
+      order: [['display_order', 'ASC'], ['created_at', 'ASC']]
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: updatedCategories,
+      message: 'Categories order updated successfully',
     });
   } catch (error) {
     next(error);

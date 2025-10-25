@@ -53,6 +53,13 @@ router.put(
 );
 
 /**
+ * @route PUT /api/v1/categories/reorder
+ * @desc Update categories display order
+ * @access Private
+ */
+router.put('/reorder', categoryController.updateCategoriesOrder);
+
+/**
  * @route DELETE /api/v1/categories/:id
  * @desc Delete a category
  * @access Private

@@ -49,8 +49,10 @@ import {
   ViewModule,
   ViewList,
   ShoppingBasket,
+  DragIndicator,
 } from '@mui/icons-material';
 import apiService from '../../api/apiService';
+import { toast } from 'react-toastify';
 
 // Demo data for categories
 const demoCategories = [
@@ -113,6 +115,11 @@ const Categories = () => {
     status: 'active',
     image: 'https://via.placeholder.com/100',
   });
+
+  // State for drag and drop
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Load categories from API
   useEffect(() => {
@@ -293,6 +300,66 @@ const Categories = () => {
       console.error('Failed to save category:', error);
     }
   };
+
+  // Drag and drop handlers
+  const handleDragStart = (e, category) => {
+    setDraggedItem(category);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, category) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverItem(category);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverItem(null);
+  };
+
+  const handleDrop = async (e, targetCategory) => {
+    e.preventDefault();
+    
+    if (!draggedItem || draggedItem.id === targetCategory.id) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    try {
+      setIsReordering(true);
+      
+      // Create a new array with reordered items
+      const reorderedCategories = [...categories];
+      const draggedIndex = reorderedCategories.findIndex(cat => cat.id === draggedItem.id);
+      const targetIndex = reorderedCategories.findIndex(cat => cat.id === targetCategory.id);
+      
+      // Remove dragged item and insert at target position
+      const [removed] = reorderedCategories.splice(draggedIndex, 1);
+      reorderedCategories.splice(targetIndex, 0, removed);
+      
+      // Update display_order for all categories
+      const updatePayload = reorderedCategories.map((category, index) => ({
+        id: category.id,
+        display_order: index + 1
+      }));
+      
+      // Send to backend
+      await apiService.updateCategoriesOrder(updatePayload);
+      
+      // Update local state
+      setCategories(reorderedCategories);
+      toast.success(t('categoryOrderUpdated', 'Category order updated successfully'));
+      
+    } catch (error) {
+      console.error('Failed to update category order:', error);
+      toast.error(t('failedToUpdateOrder', 'Failed to update category order'));
+    } finally {
+      setIsReordering(false);
+      setDraggedItem(null);
+      setDragOverItem(null);
+    }
+  };
   
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -400,9 +467,25 @@ const Categories = () => {
                 {filteredCategories
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((category) => (
-                    <TableRow key={category.id}>
+                    <TableRow 
+                      key={category.id}
+                      draggable={!isReordering}
+                      onDragStart={(e) => handleDragStart(e, category)}
+                      onDragOver={(e) => handleDragOver(e, category)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, category)}
+                      sx={{
+                        cursor: 'move',
+                        backgroundColor: dragOverItem?.id === category.id ? 'action.hover' : 'inherit',
+                        opacity: draggedItem?.id === category.id ? 0.5 : 1,
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                        }
+                      }}
+                    >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <DragIndicator sx={{ mr: 1, color: 'text.secondary', cursor: 'grab' }} />
                           <CardMedia
                             component="img"
                             sx={{ width: 40, height: 40, borderRadius: 1, marginInlineEnd: 2 }}
@@ -465,13 +548,45 @@ const Categories = () => {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((category) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={category.id}>
-                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={category.image}
-                      alt={category.name}
-                    />
+                  <Card 
+                    sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      cursor: 'move',
+                      backgroundColor: dragOverItem?.id === category.id ? 'action.hover' : 'inherit',
+                      opacity: draggedItem?.id === category.id ? 0.5 : 1,
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
+                    draggable={!isReordering}
+                    onDragStart={(e) => handleDragStart(e, category)}
+                    onDragOver={(e) => handleDragOver(e, category)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, category)}
+                  >
+                    <Box sx={{ position: 'relative' }}>
+                      <DragIndicator 
+                        sx={{ 
+                          position: 'absolute', 
+                          top: 8, 
+                          right: 8, 
+                          color: 'text.secondary', 
+                          cursor: 'grab',
+                          zIndex: 1,
+                          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                          borderRadius: '50%',
+                          p: 0.5
+                        }} 
+                      />
+                      <CardMedia
+                        component="img"
+                        height="140"
+                        image={category.image}
+                        alt={category.name}
+                      />
+                    </Box>
                     <CardContent sx={{ flexGrow: 1 }}>
                       <Typography gutterBottom variant="h6" component="div">
                         {category.name}

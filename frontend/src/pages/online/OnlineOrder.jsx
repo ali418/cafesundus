@@ -233,7 +233,14 @@ const OnlineOrder = () => {
         let allCategories = [{ id: 1, name: t('all') }];
         try {
           const categoriesData = await apiService.getCategories();
-          allCategories = allCategories.concat(categoriesData || []);
+          // Sort categories by display_order, then by created_at
+          const sortedCategories = (categoriesData || []).sort((a, b) => {
+            if (a.display_order !== b.display_order) {
+              return (a.display_order || 0) - (b.display_order || 0);
+            }
+            return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+          });
+          allCategories = allCategories.concat(sortedCategories);
         } catch (catErr) {
           console.warn('Fetching categories failed, using default only', catErr);
         }

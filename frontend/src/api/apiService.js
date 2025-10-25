@@ -496,6 +496,17 @@ const apiService = {
     }
   },
 
+  updateCategoriesOrder: async (categories) => {
+    try {
+      const response = await axiosInstance.put('/categories/reorder', { categories });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error updating categories order:', error);
+      error.userMessage = error.friendlyMessage || 'Failed to update categories order. Please try again later.';
+      throw error;
+    }
+  },
+
   // Sales API methods
   getSales: async () => {
     try {

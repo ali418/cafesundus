@@ -26,6 +26,11 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
       allowNull: false,
+    },
+    display_order: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
     }
   }, {
     tableName: 'categories',
