@@ -24,7 +24,9 @@ import {
   Tooltip,
   Alert,
   Snackbar,
-  TablePagination
+  TablePagination,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   ShoppingBag as ShoppingBagIcon,
@@ -59,9 +61,11 @@ const OnlineOrderNotifications = () => {
   const [error, setError] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [previousOrderCount, setPreviousOrderCount] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(true); // New state for auto-refresh toggle
   
   // Ref for notification sound
   const audioRef = useRef(new Audio(notificationSound));
+  const intervalRef = useRef(null);
   
   // State for pagination
   const [page, setPage] = useState(0);
@@ -126,19 +130,21 @@ const OnlineOrderNotifications = () => {
     }
   };
   
-  // Initial fetch
+  // Initial fetch and polling
   useEffect(() => {
+    if (!autoRefresh) return; // Only poll if auto-refresh is enabled
+    
     let intervalId;
     let retryCount = 0;
     const maxRetries = 3;
-    const baseInterval = 180000; // 3 minutes base interval
+    const baseInterval = 300000; // 5 minutes base interval (reduced server load)
     
-    const pollOrderNotifications = async () => {
+    const pollNotifications = async () => {
       try {
-        await fetchOrderNotifications();
+        await fetchNotifications();
         retryCount = 0; // Reset retry count on success
       } catch (error) {
-        console.error('Error polling order notifications:', error);
+        console.error('Error polling notifications:', error);
         
         // Handle 429 error specifically
         if (error.response?.status === 429) {
@@ -151,11 +157,11 @@ const OnlineOrderNotifications = () => {
             // Clear current interval and set new one with backoff
             if (intervalId) clearInterval(intervalId);
             setTimeout(() => {
-              intervalId = setInterval(pollOrderNotifications, backoffDelay);
+              intervalId = setInterval(pollNotifications, backoffDelay);
             }, backoffDelay);
             return;
           } else {
-            console.warn('Max retries reached for order notification polling. Stopping polling.');
+            console.warn('Max retries reached for notification polling. Stopping polling.');
             if (intervalId) clearInterval(intervalId);
             return;
           }
@@ -164,15 +170,16 @@ const OnlineOrderNotifications = () => {
     };
     
     // Initial fetch
-    pollOrderNotifications();
+    pollNotifications();
     
-    // Set up polling interval with increased interval (3 minutes instead of 1 minute)
-    intervalId = setInterval(pollOrderNotifications, baseInterval);
+    // Set up polling interval with reduced frequency (5 minutes)
+    intervalId = setInterval(pollNotifications, baseInterval);
+    intervalRef.current = intervalId;
     
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [page, rowsPerPage]);
+  }, [autoRefresh]);
   
   // Play notification sound when new orders arrive
   useEffect(() => {
@@ -184,6 +191,20 @@ const OnlineOrderNotifications = () => {
     }
     setPreviousOrderCount(orders.length);
   }, [orders.length, soundEnabled]);
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchNotifications();
+  };
+
+  // Toggle auto-refresh
+  const handleAutoRefreshToggle = (event) => {
+    setAutoRefresh(event.target.checked);
+    if (!event.target.checked && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
   
   // Handle page change
   const handleChangePage = (event, newPage) => {
@@ -602,21 +623,34 @@ const OnlineOrderNotifications = () => {
         <Typography variant="h4" component="h1">
           {t('online:onlineOrderNotifications', 'إشعارات الطلبات الأونلاين')}
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Auto-refresh toggle */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoRefresh}
+                onChange={handleAutoRefreshToggle}
+                size="small"
+              />
+            }
+            label="تحديث تلقائي"
+          />
+          
+          {/* Manual refresh button */}
+          <Button
+            onClick={handleManualRefresh}
+            variant="outlined"
+            color="primary"
+            startIcon={<RefreshIcon />}
+          >
+            تحديث الإشعارات
+          </Button>
+          
           <Tooltip title={soundEnabled ? t('online:disableNotificationSound', 'تعطيل صوت الإشعارات') : t('online:enableNotificationSound', 'تفعيل صوت الإشعارات')}>
-            <IconButton onClick={toggleSound} color={soundEnabled ? 'primary' : 'default'} sx={{ mr: 1 }}>
+            <IconButton onClick={toggleSound} color={soundEnabled ? 'primary' : 'default'}>
               {soundEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
             </IconButton>
           </Tooltip>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<RefreshIcon />}
-            onClick={fetchOrderNotifications}
-            sx={{ ml: 1 }}
-          >
-            {t('common:refresh')}
-          </Button>
         </Box>
       </Box>
       

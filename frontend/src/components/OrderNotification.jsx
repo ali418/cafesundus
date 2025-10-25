@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -9,13 +9,15 @@ import {
   Typography, 
   Box, 
   Divider, 
+  Chip,
   Button,
+  Switch,
+  FormControlLabel,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Avatar,
-  Tooltip
+  Avatar
 } from '@mui/material';
 import { 
   Notifications as NotificationsIcon,
@@ -33,6 +35,9 @@ const OrderNotification = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(true); // New state for auto-refresh toggle
+  const audioRef = useRef(null);
+  const intervalRef = useRef(null);
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   
   // Handle menu open/close
@@ -156,15 +161,29 @@ const OrderNotification = () => {
     navigate('/online/notifications');
     handleMenuClose();
   };
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchNotifications();
+  };
+
+  // Toggle auto-refresh
+  const handleAutoRefreshToggle = (event) => {
+    setAutoRefresh(event.target.checked);
+    if (!event.target.checked && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
   
   // Poll for new notifications
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !autoRefresh) return; // Only poll if authenticated and auto-refresh is enabled
     
     let intervalId;
     let retryCount = 0;
     const maxRetries = 3;
-    const baseInterval = 120000; // 2 minutes base interval
+    const baseInterval = 300000; // 5 minutes base interval (reduced server load)
     
     const pollNotifications = async () => {
       try {
@@ -199,13 +218,14 @@ const OrderNotification = () => {
     // Initial fetch
     pollNotifications();
     
-    // Set up polling interval with increased interval (2 minutes instead of 30 seconds)
+    // Set up polling interval with reduced frequency (5 minutes)
     intervalId = setInterval(pollNotifications, baseInterval);
+    intervalRef.current = intervalId;
     
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, autoRefresh]); // Add autoRefresh to dependencies
   
   // Navigate to notifications page
   const handleViewAllNotifications = () => {
@@ -245,14 +265,44 @@ const OrderNotification = () => {
   
   return (
     <>
-      <Tooltip title={t('notifications', 'Notifications')}>
-        <IconButton color="inherit" onClick={handleMenuOpen}>
+      <audio ref={audioRef} preload="auto">
+        <source src="/notification-sound.mp3" type="audio/mpeg" />
+      </audio>
+      
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Auto-refresh toggle */}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={autoRefresh}
+              onChange={handleAutoRefreshToggle}
+              size="small"
+            />
+          }
+          label="تحديث تلقائي"
+          sx={{ fontSize: '0.8rem' }}
+        />
+        
+        {/* Manual refresh button */}
+        <Button
+          size="small"
+          onClick={handleManualRefresh}
+          variant="outlined"
+          sx={{ minWidth: 'auto', px: 1 }}
+        >
+          تحديث
+        </Button>
+        
+        <IconButton
+          color="inherit"
+          onClick={handleMenuOpen}
+          sx={{ position: 'relative' }}
+        >
           <Badge badgeContent={unreadCount} color="error">
             <NotificationsIcon />
           </Badge>
         </IconButton>
-      </Tooltip>
-      
+      </Box>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
