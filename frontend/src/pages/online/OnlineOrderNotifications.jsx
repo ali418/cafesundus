@@ -128,14 +128,50 @@ const OnlineOrderNotifications = () => {
   
   // Initial fetch
   useEffect(() => {
-    fetchOrderNotifications();
+    let intervalId;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const baseInterval = 180000; // 3 minutes base interval
     
-    // Set up polling interval
-    const intervalId = setInterval(() => {
-      fetchOrderNotifications();
-    }, 60000); // Check every minute
+    const pollOrderNotifications = async () => {
+      try {
+        await fetchOrderNotifications();
+        retryCount = 0; // Reset retry count on success
+      } catch (error) {
+        console.error('Error polling order notifications:', error);
+        
+        // Handle 429 error specifically
+        if (error.response?.status === 429) {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            // Exponential backoff: wait longer after each failure
+            const backoffDelay = baseInterval * Math.pow(2, retryCount);
+            console.log(`Rate limited. Retrying in ${backoffDelay / 1000} seconds...`);
+            
+            // Clear current interval and set new one with backoff
+            if (intervalId) clearInterval(intervalId);
+            setTimeout(() => {
+              intervalId = setInterval(pollOrderNotifications, backoffDelay);
+            }, backoffDelay);
+            return;
+          } else {
+            console.warn('Max retries reached for order notification polling. Stopping polling.');
+            if (intervalId) clearInterval(intervalId);
+            return;
+          }
+        }
+      }
+    };
     
-    return () => clearInterval(intervalId);
+    // Initial fetch
+    pollOrderNotifications();
+    
+    // Set up polling interval with increased interval (3 minutes instead of 1 minute)
+    intervalId = setInterval(pollOrderNotifications, baseInterval);
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [page, rowsPerPage]);
   
   // Play notification sound when new orders arrive

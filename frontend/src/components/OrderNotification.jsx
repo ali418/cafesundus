@@ -161,15 +161,50 @@ const OrderNotification = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     
+    let intervalId;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const baseInterval = 120000; // 2 minutes base interval
+    
+    const pollNotifications = async () => {
+      try {
+        await fetchNotifications();
+        retryCount = 0; // Reset retry count on success
+      } catch (error) {
+        console.error('Error polling notifications:', error);
+        
+        // Handle 429 error specifically
+        if (error.response?.status === 429) {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            // Exponential backoff: wait longer after each failure
+            const backoffDelay = baseInterval * Math.pow(2, retryCount);
+            console.log(`Rate limited. Retrying in ${backoffDelay / 1000} seconds...`);
+            
+            // Clear current interval and set new one with backoff
+            if (intervalId) clearInterval(intervalId);
+            setTimeout(() => {
+              intervalId = setInterval(pollNotifications, backoffDelay);
+            }, backoffDelay);
+            return;
+          } else {
+            console.warn('Max retries reached for notification polling. Stopping polling.');
+            if (intervalId) clearInterval(intervalId);
+            return;
+          }
+        }
+      }
+    };
+    
     // Initial fetch
-    fetchNotifications();
+    pollNotifications();
     
-    // Set up polling interval
-    const intervalId = setInterval(() => {
-      fetchNotifications();
-    }, 30000); // Poll every 30 seconds
+    // Set up polling interval with increased interval (2 minutes instead of 30 seconds)
+    intervalId = setInterval(pollNotifications, baseInterval);
     
-    return () => clearInterval(intervalId);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isAuthenticated]);
   
   // Navigate to notifications page
