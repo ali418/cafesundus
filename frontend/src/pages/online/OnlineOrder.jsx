@@ -646,13 +646,18 @@ const OnlineOrder = () => {
       // Add order data to form
       formData.append('orderData', JSON.stringify(orderData));
 
-      // Add transaction image (must be a File)
-      if (!customerInfo.transactionImage || !(customerInfo.transactionImage instanceof File)) {
-        toast.error(t('pleaseUploadReceiptImage', 'الرجاء اختيار صورة إيصال الدفع أولاً'));
-        setOrderSubmitting(false);
-        return;
+      // Add transaction image based on payment method
+      if (customerInfo.paymentMethod === 'mobileMoney') {
+        if (!customerInfo.transactionImage || !(customerInfo.transactionImage instanceof File)) {
+          toast.error(t('uploadTransactionReceipt', 'الرجاء تحميل إيصال المعاملة'));
+          setOrderSubmitting(false);
+          return;
+        }
+        formData.append('transactionImage', customerInfo.transactionImage, customerInfo.transactionImage.name);
+      } else if (customerInfo.transactionImage && customerInfo.transactionImage instanceof File) {
+        // Optional: include image if user uploaded one anyway
+        formData.append('transactionImage', customerInfo.transactionImage, customerInfo.transactionImage.name);
       }
-      formData.append('transactionImage', customerInfo.transactionImage, customerInfo.transactionImage.name);
 
       // Debug: print request payload before sending
       try {
