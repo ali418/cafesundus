@@ -118,6 +118,7 @@ module.exports = (sequelize) => {
         name: 'customerId',
         field: 'customer_id',
         allowNull: true,
+        type: DataTypes.INTEGER, // Match Customer model ID type
       },
       as: 'customer',
     });

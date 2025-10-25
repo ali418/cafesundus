@@ -3,8 +3,8 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const Customer = sequelize.define('Customer', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
     name: {
@@ -56,8 +56,13 @@ module.exports = (sequelize) => {
       defaultValue: true,
     },
   }, {
+    tableName: 'customers',
     timestamps: true,
     paranoid: true, // Soft delete
+    underscored: true, // Use snake_case for column names in the database
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at'
   });
 
   Customer.associate = (models) => {
