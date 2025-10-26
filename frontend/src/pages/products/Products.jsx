@@ -74,10 +74,17 @@ const getProductImageUrl = (product) => {
   const img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
+  // Check if it's a Cloudinary URL (contains cloudinary.com or res.cloudinary.com)
+  if (/cloudinary\.com/i.test(img)) return img;
+  
+  // Check if it's an absolute URL
   if (/^https?:\/\//i.test(img)) return img;
+  
+  // Handle local uploads paths
   if (img.startsWith('/uploads/')) return img;
   if (img.startsWith('uploads/')) return '/' + img;
   if (/\.(png|jpe?g|gif|webp|svg)$/i.test(img)) return `/uploads/${img}`;
+  
   return placeholderImage;
 };
 

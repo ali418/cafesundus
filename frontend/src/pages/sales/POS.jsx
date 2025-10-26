@@ -77,6 +77,9 @@ const getProductImageUrl = (product) => {
   let img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
+  // Check if it's a Cloudinary URL (contains cloudinary.com or res.cloudinary.com)
+  if (/cloudinary\.com/i.test(img)) return img;
+
   // Normalize Windows-style backslashes and strip query/hash
   img = img.replace(/\\\\/g, '/');
   const noQuery = img.split('#')[0].split('?')[0];

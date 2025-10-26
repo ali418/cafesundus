@@ -84,6 +84,9 @@ const getProductImageUrl = (product) => {
   let img = typeof raw === 'string' ? raw.trim() : '';
   if (!img) return placeholderImage;
 
+  // Check if it's a Cloudinary URL (contains cloudinary.com or res.cloudinary.com)
+  if (/cloudinary\.com/i.test(img)) return img;
+
   // طبعنة المسار للتعامل مع Windows: تحويل \\ إلى /
   img = img.replace(/\\\\/g, '/');
 
