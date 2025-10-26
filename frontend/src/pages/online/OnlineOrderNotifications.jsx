@@ -141,7 +141,7 @@ const OnlineOrderNotifications = () => {
     
     const pollNotifications = async () => {
       try {
-        await fetchNotifications();
+        await fetchOrderNotifications();
         retryCount = 0; // Reset retry count on success
       } catch (error) {
         console.error('Error polling notifications:', error);
@@ -194,7 +194,7 @@ const OnlineOrderNotifications = () => {
 
   // Manual refresh function
   const handleManualRefresh = () => {
-    fetchNotifications();
+    fetchOrderNotifications();
   };
 
   // Toggle auto-refresh
