@@ -42,6 +42,9 @@ module.exports = function (app) {
       changeOrigin: true,
       timeout: 60000, // Increase timeout to 60 seconds
       proxyTimeout: 60000, // Increase proxy timeout to 60 seconds
+      pathRewrite: {
+        '^/api': '/api', // Keep the /api prefix for backend
+      },
       onProxyRes: function(proxyRes) {
         // إضافة رؤوس CORS للسماح بالوصول من أي مصدر
         proxyRes.headers['Access-Control-Allow-Origin'] = '*';

@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
   LoginHistory.associate = (models) => {
     // Define associations here
     LoginHistory.belongsTo(models.User, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'user',
       onDelete: 'CASCADE',
     });

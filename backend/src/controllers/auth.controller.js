@@ -102,7 +102,7 @@ exports.login = async (req, res, next) => {
       // Record failed login attempt
       try {
         await LoginHistory.create({
-          userId: user.id,
+          user_id: user.id,
           ipAddress: req.ip,
           userAgent: req.headers['user-agent'],
           device: (req.headers['user-agent'] || '').split(') ').pop() || null,
@@ -134,7 +134,7 @@ exports.login = async (req, res, next) => {
     try {
       await user.update({ lastLogin: new Date() });
       await LoginHistory.create({
-        userId: user.id,
+        user_id: user.id,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         device: (req.headers['user-agent'] || '').split(') ').pop() || null,

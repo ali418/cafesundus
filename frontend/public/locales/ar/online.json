@@ -73,6 +73,12 @@
   "confirmPaymentMessage": "هل أنت متأكد من أنك تريد الدفع باستخدام {{provider}}؟",
   "confirmPaymentDescription": "سيتم فتح تطبيق الدفع وستحتاج إلى إدخال {{pinDigits}} أرقام PIN لإكمال المعاملة.",
   "airtelInstructions": "بعد الضغط على الاتصال، سيتم تنفيذ عملية التحويل مباشرة إلى الرقم {{phoneNumber}} بمبلغ {{amount}}",
+  "deliveryFee": "رسوم التوصيل",
+  "deliveryFeeAmount": "4,000 UGX",
+  "deliveryFeeNotice": "سيتم إضافة رسوم توصيل ثابتة بقيمة 4,000 UGX إلى إجمالي طلبك",
+  "deliveryFeeAdded": "تم إضافة رسوم التوصيل إلى طلبك",
+  "freeDelivery": "توصيل مجاني",
+  "deliveryIncluded": "رسوم التوصيل مشمولة",
   "yes": "نعم",
   "no": "لا"
 }

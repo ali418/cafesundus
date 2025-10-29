@@ -49,6 +49,7 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
+  Alert,
 } from '@mui/material';
 import {
   Search,
@@ -225,14 +226,20 @@ const OnlineOrder = () => {
     return isNaN(numPrice) ? 0 : numPrice;
   };
   
-  // Calculate totals with safe number conversion
+  // Delivery fee constant (4000 UGX)
+  const DELIVERY_FEE = 4000;
+  
+  // Calculate totals with safe number conversion and delivery fee
   const subtotal = cartItems.reduce((sum, item) => {
     const itemPrice = parsePrice(item.price);
     return sum + (itemPrice * item.quantity);
   }, 0);
   const taxRatePercent = Number(storeSettings?.taxRate) || 0;
   const tax = subtotal * (taxRatePercent / 100);
-  const total = subtotal + tax;
+  
+  // Add delivery fee to total calculation
+  const deliveryFee = DELIVERY_FEE;
+  const total = subtotal + tax + deliveryFee;
   
   // Fetch products and categories from API
   useEffect(() => {
@@ -666,6 +673,7 @@ const OnlineOrder = () => {
         })),
         subtotal,
         tax,
+        deliveryFee,
         total,
         orderType: 'online',
         paymentMethod: customerInfo.paymentMethod,
@@ -1171,6 +1179,29 @@ const OnlineOrder = () => {
             </FormControl>
           </Grid>
           
+          {/* Delivery Fee Notification */}
+          <Grid item xs={12}>
+            <Alert 
+              severity="info" 
+              sx={{ 
+                mt: 2,
+                borderRadius: 2,
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                borderColor: '#d4af37',
+                '& .MuiAlert-icon': {
+                  color: '#d4af37'
+                }
+              }}
+            >
+              <Typography variant="body2">
+                <strong>{t('deliveryFeeNotice')}</strong>
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                {t('deliveryFeeAmount')}: <strong>{currency.symbol}{DELIVERY_FEE.toFixed(2)}</strong>
+              </Typography>
+            </Alert>
+          </Grid>
+          
           {/* Mobile Money Provider Selection - Only shown when Mobile Money is selected */}
           {customerInfo.paymentMethod === 'mobileMoney' && (
             <Grid item xs={12}>
@@ -1454,6 +1485,14 @@ const OnlineOrder = () => {
                   </Grid>
                 </>
               )}
+              <Grid item xs={6}>
+                <Typography variant="body1">{t('deliveryFee')}:</Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="body1" align="right">
+                  {currency.symbol}{deliveryFee.toFixed(2)}
+                </Typography>
+              </Grid>
               <Grid item xs={6}>
                 <Typography variant="h6">{t('total')}:</Typography>
               </Grid>
