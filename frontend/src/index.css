@@ -11,7 +11,7 @@
   margin: 10mm 8mm 10mm 8mm; /* تقليل الهوامش من 6.35mm إلى 8mm جانبياً و 10mm عمودياً */
   padding: 0;
   -webkit-print-color-adjust: exact;
-  color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 @media print {
