@@ -49,6 +49,7 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'users',
     timestamps: true,
     paranoid: true, // Soft delete
+    underscored: true, // Use snake_case for column names (created_at, updated_at, deleted_at)
   });
 
   User.associate = (models) => {
