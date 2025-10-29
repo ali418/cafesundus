@@ -176,6 +176,19 @@ const PORT = Number(process.env.PORT || 3000);
     
     await db.sequelize.authenticate();
 
+    // Ensure database structure is correct (especially for Railway deployment)
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        console.log('🔍 Verifying database structure for production...');
+        const { ensureDbStructure } = require('../ensure-db-structure');
+        await ensureDbStructure();
+        console.log('✅ Database structure verification complete');
+      } catch (error) {
+        console.error('❌ Database structure verification failed:', error.message);
+        // Don't exit, continue with startup but log the error
+      }
+    }
+
     // Create settings table if it doesn't exist
     try {
       // First check if the settings table exists

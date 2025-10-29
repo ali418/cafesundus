@@ -37,6 +37,10 @@ module.exports = {
     dialectOptions: {
       ssl: { require: true, rejectUnauthorized: false }
     },
-    logging: false
+    logging: false,
+    define: {
+      timestamps: true,
+      underscored: true,
+    },
   },
 };
