@@ -20,11 +20,13 @@
     visibility: hidden;
   }
 
-  #receipt-print, #receipt-print * {
+  #receipt-print, #receipt-print *,
+  #receipt-container, #receipt-container * {
     visibility: visible;
   }
 
-  #receipt-print {
+  #receipt-print,
+  #receipt-container {
     position: absolute;
     left: 0;
     top: 0;
@@ -39,7 +41,8 @@
   }
 
   /* تحسين أحجام الخطوط للعناوين */
-  #receipt-print h1, #receipt-print h2, #receipt-print h3 {
+  #receipt-print h1, #receipt-print h2, #receipt-print h3,
+  #receipt-container h1, #receipt-container h2, #receipt-container h3 {
     font-size: 20px !important; /* زيادة من 14px إلى 20px للعناوين */
     font-weight: bold !important;
     margin: 2mm 0 !important;
@@ -49,7 +52,10 @@
   /* تحسين أحجام الخطوط للجداول */
   #receipt-print table,
   #receipt-print th,
-  #receipt-print td {
+  #receipt-print td,
+  #receipt-container table,
+  #receipt-container th,
+  #receipt-container td {
     font-size: 16px !important; /* زيادة من 11px إلى 16px للجداول */
     font-weight: 500 !important;
     padding: 3mm !important; /* زيادة المسافة داخل الخلايا من 2mm إلى 3mm */
@@ -57,14 +63,17 @@
   }
 
   #receipt-print .MuiTypography-body1,
-  #receipt-print .MuiTypography-body2 {
+  #receipt-print .MuiTypography-body2,
+  #receipt-container .MuiTypography-body1,
+  #receipt-container .MuiTypography-body2 {
     font-size: 18px !important;
     line-height: 1.4 !important;
     font-weight: bold !important;   /* وزن خط أثقل للوضوح */
   }
 
   /* تحسين تنسيق الصور */
-  #receipt-print img {
+  #receipt-print img,
+  #receipt-container img {
     max-width: 100% !important;
     height: auto !important;
     margin: 2mm 0 !important;
@@ -130,21 +139,24 @@
   font-weight: bold !important;
 }
 
-#receipt-print .MuiTableContainer-root {
+#receipt-print .MuiTableContainer-root,
+#receipt-container .MuiTableContainer-root {
   margin: 5px 0 !important;
   padding: 0 !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-#receipt-print .MuiTable-root {
+#receipt-print .MuiTable-root,
+#receipt-container .MuiTable-root {
   width: 100% !important;
   border-collapse: collapse !important;
   margin: 3px 0 !important;
   border: 1px dashed #000 !important;
 }
 
-#receipt-print .MuiTableCell-root {
+#receipt-print .MuiTableCell-root,
+#receipt-container .MuiTableCell-root {
   padding: 3mm !important; /* زيادة من 2px 3px إلى 3mm */
   font-size: 16px !important; /* زيادة من 12px إلى 16px */
   border: 1px dotted #ccc !important;

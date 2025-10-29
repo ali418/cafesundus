@@ -25,6 +25,7 @@ import {
   ArrowBack as ArrowBackIcon,
   Print as PrintIcon,
   Receipt as ReceiptIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 // import { QRCodeSVG } from 'qrcode.react';
@@ -79,6 +80,39 @@ const SaleDetails = () => {
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
   });
+
+  // WhatsApp share functionality
+  const handleWhatsAppShare = () => {
+    if (!sale) return;
+
+    const customerName = sale.customer?.name || sale.customerInfo?.name || sale.customerName || t('sales:walkInCustomer');
+    const saleDate = sale.saleDate ? format(new Date(sale.saleDate), 'yyyy-MM-dd HH:mm') : t('notAvailable');
+    const total = parseFloat(Number(sale.total) || Number(sale.totalAmount) || Number(sale.total_amount) || 0).toFixed(2);
+    
+    // Create items list
+    const itemsList = Array.isArray(sale.items) && sale.items.length > 0 
+      ? sale.items.map(item => {
+          const productName = item.Product?.name || item.product?.name || item.product || t('notAvailable');
+          const quantity = item.quantity || 0;
+          const unitPrice = Number(item.unitPrice ?? item.unit_price ?? item.price ?? item.Product?.price ?? 0).toFixed(2);
+          return `• ${productName} × ${quantity} = ${unitPrice}`;
+        }).join('\n')
+      : t('sales:noItems');
+
+    const message = `🧾 *${t('sales:saleDetails')}*\n\n` +
+      `📋 *${t('id')}:* #${sale.id}\n` +
+      `📅 *${t('date')}:* ${saleDate}\n` +
+      `👤 *${t('customers:customer')}:* ${customerName}\n` +
+      `💳 *${t('sales:paymentMethod')}:* ${sale.paymentMethod ? t(`sales:paymentMethods.${sale.paymentMethod}`) : t('notAvailable')}\n\n` +
+      `📦 *${t('sales:items')}:*\n${itemsList}\n\n` +
+      `💰 *${t('sales:total')}:* ${total}\n\n` +
+      `🏪 ${storeSettings?.name || t('appName')}`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
 
   // Auto-print when "?print=1" is present and sale data is loaded
   useEffect(() => {
@@ -154,6 +188,11 @@ const SaleDetails = () => {
           <Tooltip title={t('print')}>
             <IconButton onClick={handlePrint} color="primary" sx={{ marginInlineEnd: 1 }}>
               <PrintIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('share')}>
+            <IconButton onClick={handleWhatsAppShare} sx={{ marginInlineEnd: 1, color: '#25d366' }}>
+              <ShareIcon />
             </IconButton>
           </Tooltip>
           {/* Removed: Create Invoice button */}

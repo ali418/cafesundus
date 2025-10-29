@@ -191,6 +191,25 @@ const OnlineOrder = () => {
   // State for payment confirmation dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState('');
+  
+  // State for call button dialog
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
+
+  // Phone numbers for MTN and Airtel
+  const phoneNumbers = {
+    mtn: '0792122222',
+    airtel: '0744323289'
+  };
+
+  // Function to handle phone call
+  const handlePhoneCall = (provider) => {
+    const phoneNumber = phoneNumbers[provider];
+    if (phoneNumber) {
+      // Create tel: link to initiate call
+      window.location.href = `tel:${phoneNumber}`;
+    }
+    setCallDialogOpen(false);
+  };
   // State for order process
   const [activeStep, setActiveStep] = useState(0);
   const steps = [t('selectProducts'), t('customerInfo'), t('confirmOrder')];
@@ -1743,6 +1762,20 @@ const OnlineOrder = () => {
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton 
               color="inherit" 
+              onClick={() => setCallDialogOpen(true)}
+              sx={{ 
+                mr: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Phone />
+            </IconButton>
+            <IconButton 
+              color="inherit" 
               onClick={() => setActiveStep(1)}
               sx={{ mr: 1 }}
             >
@@ -1865,6 +1898,162 @@ const OnlineOrder = () => {
             autoFocus
           >
             {t('yes', 'نعم')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Call Options Dialog */}
+      <Dialog
+        open={callDialogOpen}
+        onClose={() => setCallDialogOpen(false)}
+        aria-labelledby="call-dialog-title"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 300,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+          }
+        }}
+      >
+        <DialogTitle 
+          id="call-dialog-title"
+          sx={{ 
+            textAlign: 'center',
+            pb: 1,
+            background: 'linear-gradient(45deg, #d4af37 30%, #f5cc7f 90%)',
+            color: '#000',
+            fontWeight: 'bold'
+          }}
+        >
+          <Phone sx={{ mr: 1, verticalAlign: 'middle' }} />
+          {i18n.language === 'ar' ? 'اتصل بنا' : 'Call Us'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 2 }}>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              textAlign: 'center', 
+              mb: 3,
+              color: '#555',
+              fontWeight: 500
+            }}
+          >
+            {i18n.language === 'ar' ? 'اختر مزود الخدمة للاتصال:' : 'Choose your service provider to call:'}
+          </Typography>
+          
+          <Grid container spacing={2}>
+            {/* MTN Option */}
+            <Grid item xs={12}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  border: '2px solid transparent',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(255, 193, 7, 0.3)',
+                    border: '2px solid #ffc107'
+                  }
+                }}
+                onClick={() => handlePhoneCall('mtn')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(45deg, #ffc107 30%, #ffeb3b 90%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mr: 2
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ color: '#000', fontWeight: 'bold' }}>
+                        MTN
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
+                        MTN
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#666' }}>
+                        {phoneNumbers.mtn}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Phone sx={{ color: '#ffc107', fontSize: 28 }} />
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Airtel Option */}
+            <Grid item xs={12}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  border: '2px solid transparent',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(244, 67, 54, 0.3)',
+                    border: '2px solid #f44336'
+                  }
+                }}
+                onClick={() => handlePhoneCall('airtel')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(45deg, #f44336 30%, #ff5722 90%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mr: 2
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                        AIR
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
+                        Airtel
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#666' }}>
+                        {phoneNumbers.airtel}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Phone sx={{ color: '#f44336', fontSize: 28 }} />
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+          <Button 
+            onClick={() => setCallDialogOpen(false)} 
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              '&:hover': {
+                transform: 'scale(1.05)'
+              }
+            }}
+          >
+            {i18n.language === 'ar' ? 'إلغاء' : 'Cancel'}
           </Button>
         </DialogActions>
       </Dialog>
