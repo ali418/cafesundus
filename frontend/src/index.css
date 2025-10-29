@@ -34,9 +34,9 @@
     max-width: 100% !important;
     margin: 0 !important; /* إزالة الهوامش الجانبية التي كانت تسبب توسيط المحتوى */
     padding: 2mm !important; /* تقليل المسافة الداخلية من 5mm إلى 2mm */
-    font-size: 18px !important; /* زيادة من 14px إلى 18px للنص الأساسي */
+    font-size: 22px !important; /* زيادة من 14px إلى 18px للنص الأساسي */
     line-height: 1.4 !important;
-    font-weight: 400 !important;
+    font-weight: bold !important;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
   }
 
@@ -57,7 +57,7 @@
   #receipt-container th,
   #receipt-container td {
     font-size: 16px !important; /* زيادة من 11px إلى 16px للجداول */
-    font-weight: 500 !important;
+    font-weight: bold !important;
     padding: 3mm !important; /* زيادة المسافة داخل الخلايا من 2mm إلى 3mm */
     border: 1px solid #000 !important;
   }
@@ -67,7 +67,7 @@
   #receipt-container .MuiTypography-body1,
   #receipt-container .MuiTypography-body2 {
     font-size: 18px !important;
-    line-height: 1.4 !important;
+    line-height: 2.4 !important;
     font-weight: bold !important;   /* وزن خط أثقل للوضوح */
   }
 
@@ -160,7 +160,7 @@
   padding: 3mm !important; /* زيادة من 2px 3px إلى 3mm */
   font-size: 16px !important; /* زيادة من 12px إلى 16px */
   border: 1px dotted #ccc !important;
-  font-weight: 900 !important;
+  font-weight: bold !important;
 }
 
 #receipt-print .MuiTypography-body1,
