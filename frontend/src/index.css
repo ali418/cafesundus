@@ -5,6 +5,72 @@
   .no-print { display: block !important; }
 }
 
+/* إعدادات الطباعة المحسنة للطابعة XP-P816 */
+@page {
+  size: A4 portrait;
+  margin: 10mm 8mm 10mm 8mm; /* تقليل الهوامش من 6.35mm إلى 8mm جانبياً و 10mm عمودياً */
+  padding: 0;
+  -webkit-print-color-adjust: exact;
+  color-adjust: exact;
+}
+
+@media print {
+  /* إخفاء كل شيء ما عدا الفاتورة */
+  body * {
+    visibility: hidden;
+  }
+
+  #receipt-print, #receipt-print * {
+    visibility: visible;
+  }
+
+  #receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important; /* تغيير من 190mm إلى 100% لاستخدام كامل العرض */
+    max-width: 100% !important;
+    margin: 0 !important; /* إزالة الهوامش الجانبية التي كانت تسبب توسيط المحتوى */
+    padding: 2mm !important; /* تقليل المسافة الداخلية من 5mm إلى 2mm */
+    font-size: 18px !important; /* زيادة من 14px إلى 18px للنص الأساسي */
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+  }
+
+  /* تحسين أحجام الخطوط للعناوين */
+  #receipt-print h1, #receipt-print h2, #receipt-print h3 {
+    font-size: 20px !important; /* زيادة من 14px إلى 20px للعناوين */
+    font-weight: bold !important;
+    margin: 2mm 0 !important;
+    line-height: 1.3 !important;
+  }
+
+  /* تحسين أحجام الخطوط للجداول */
+  #receipt-print table,
+  #receipt-print th,
+  #receipt-print td {
+    font-size: 16px !important; /* زيادة من 11px إلى 16px للجداول */
+    font-weight: 500 !important;
+    padding: 3mm !important; /* زيادة المسافة داخل الخلايا من 2mm إلى 3mm */
+    border: 1px solid #000 !important;
+  }
+
+  #receipt-print .MuiTypography-body1,
+  #receipt-print .MuiTypography-body2 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    font-weight: 400 !important;
+  }
+
+  /* تحسين تنسيق الصور */
+  #receipt-print img {
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 2mm 0 !important;
+  }
+}
+
 /* Code for printing on Xprinter XP-P53A (58mm) */ 
 @media print { 
   /* إخفاء كل شيء ما عدا الفاتورة */ 
@@ -53,8 +119,8 @@
   margin: 3px 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+  font-size: 18px !important; /* زيادة من 14px إلى 18px */
+  line-height: 1.4 !important;
 }
 
 #receipt-container .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong,
@@ -79,13 +145,15 @@
 }
 
 #receipt-print .MuiTableCell-root {
-  padding: 2px 3px !important;
-  font-size: 12px !important;
+  padding: 3mm !important; /* زيادة من 2px 3px إلى 3mm */
+  font-size: 16px !important; /* زيادة من 12px إلى 16px */
   border: 1px dotted #ccc !important;
+  font-weight: 500 !important;
 }
 
 #receipt-print .MuiTypography-body1,
 #receipt-print .MuiTypography-body2 {
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+  font-size: 18px !important; /* زيادة من 14px إلى 18px */
+  line-height: 1.4 !important;
+  font-weight: 400 !important;
 }
