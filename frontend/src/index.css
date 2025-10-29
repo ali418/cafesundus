@@ -60,7 +60,7 @@
   #receipt-print .MuiTypography-body2 {
     font-size: 18px !important;
     line-height: 1.4 !important;
-    font-weight: 400 !important;
+    font-weight: bold !important;   /* وزن خط أثقل للوضوح */
   }
 
   /* تحسين تنسيق الصور */
@@ -94,7 +94,7 @@
   .receipt-container { 
     width: 48mm; /* العرض الفعلي للطباعة على ورق 58mm */ 
     font-family: 'Courier New', Courier, monospace; /* خط مناسب للفواتير */ 
-    font-size: 8pt; /* حجم خط مقروء وصغير */ 
+    font-size: 12pt; /* حجم خط مقروء وصغير */ 
     margin: 0; 
     padding: 0; 
   } 
@@ -119,7 +119,7 @@
   margin: 3px 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  font-size: 18px !important; /* زيادة من 14px إلى 18px */
+  font-size: 22px !important; /* زيادة من 14px إلى 18px */
   line-height: 1.4 !important;
 }
 
@@ -148,12 +148,13 @@
   padding: 3mm !important; /* زيادة من 2px 3px إلى 3mm */
   font-size: 16px !important; /* زيادة من 12px إلى 16px */
   border: 1px dotted #ccc !important;
-  font-weight: 500 !important;
+  font-weight: 900 !important;
 }
 
 #receipt-print .MuiTypography-body1,
 #receipt-print .MuiTypography-body2 {
   font-size: 18px !important; /* زيادة من 14px إلى 18px */
   line-height: 1.4 !important;
-  font-weight: 400 !important;
+  font-weight: bold !important;   /* وزن خط أثقل للوضوح */
+
 }
