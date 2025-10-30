@@ -200,11 +200,11 @@ router.get('/profile/login-history', protect, async (req, res, next) => {
     const offset = (pageNum - 1) * pageSize;
 
     const { rows, count } = await LoginHistory.findAndCountAll({
-      where: { userId: req.user.id },
-      order: [['loginTime', 'DESC']],
+      where: { user_id: req.user.id },
+      order: [['login_time', 'DESC']],
       limit: pageSize,
       offset,
-      attributes: ['id', 'userId', 'ipAddress', 'userAgent', 'device', 'status', 'loginTime', 'createdAt'],
+      attributes: ['id', 'user_id', 'ipAddress', 'userAgent', 'device', 'status', 'login_time', 'createdAt'],
     });
 
     return res.status(200).json({
@@ -227,7 +227,7 @@ router.get('/profile/login-history', protect, async (req, res, next) => {
  * @desc Get login history for a specific user (self or admin)
  * @access Private
  */
-router.get('/:id/login-history', async (req, res, next) => {
+router.get('/:id/login-history', protect, async (req, res, next) => {
   try {
     const { id } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -247,11 +247,11 @@ router.get('/:id/login-history', async (req, res, next) => {
     const offset = (pageNum - 1) * pageSize;
 
     const { rows, count } = await LoginHistory.findAndCountAll({
-      where: { userId: id },
-      order: [['loginTime', 'DESC']],
+      where: { user_id: id },
+      order: [['login_time', 'DESC']],
       limit: pageSize,
       offset,
-      attributes: ['id', 'userId', 'ipAddress', 'userAgent', 'device', 'status', 'loginTime', 'createdAt'],
+      attributes: ['id', 'user_id', 'ipAddress', 'userAgent', 'device', 'status', 'login_time', 'createdAt'],
     });
 
     return res.status(200).json({

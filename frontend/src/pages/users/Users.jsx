@@ -1044,8 +1044,8 @@ const Users = () => {
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <Typography variant="body1">
-                                  {formatDate(login.loginTime || login.createdAt)}
-                                </Typography>
+                                    {formatDate(login.login_time || login.createdAt)}
+                                  </Typography>
                                 <Typography
                                   variant="body2"
                                   color={login.status === 'success' ? 'success.main' : 'error.main'}

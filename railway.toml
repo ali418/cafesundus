@@ -7,25 +7,3 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-# Environment variables for production
-[deploy.variables]
-NODE_ENV = "production"
-API_PREFIX = "/api/v1"
-JWT_SECRET = "cafe_sundus_super_secret_jwt_key_2024_production_v1"
-JWT_EXPIRES_IN = "12h"
-JWT_REFRESH_SECRET = "cafe_sundus_super_secret_refresh_key_2024_production_v1"
-JWT_REFRESH_EXPIRES_IN = "7d"
-CORS_ORIGIN = "*"
-LOG_LEVEL = "info"
-UPLOAD_DIR = "uploads"
-MAX_FILE_SIZE = "5242880"
-RATE_LIMIT_WINDOW_MS = "900000"
-RATE_LIMIT_MAX = "100"
-HELMET_ENABLED = "true"
-COMPRESSION_ENABLED = "true"
-
-# Cloudinary Configuration - Set these in Railway Dashboard
-# CLOUDINARY_CLOUD_NAME = "your_cloud_name"
-# CLOUDINARY_API_KEY = "your_api_key"
-# CLOUDINARY_API_SECRET = "your_api_secret"
