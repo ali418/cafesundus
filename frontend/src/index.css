@@ -5,168 +5,79 @@
   .no-print { display: block !important; }
 }
 
-/* إعدادات الطباعة المحسنة للطابعة XP-P816 */
-@page {
-  size: A4 portrait;
-  margin: 10mm 8mm 10mm 8mm; /* تقليل الهوامش من 6.35mm إلى 8mm جانبياً و 10mm عمودياً */
-  padding: 0;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
+/* ============================================== */
+/* == كود الطباعة الحرارية 80mm (SP-240 U) == */
+/* ============================================== */
 
 @media print {
-  /* إخفاء كل شيء ما عدا الفاتورة */
+
+  /* 1. إخفاء كل شيء في الصفحة ما عدا الفاتورة */
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
 
-  #receipt-print, #receipt-print *,
-  #receipt-container, #receipt-container * {
-    visibility: visible;
+  /* 2. إظهار الفاتورة والعناصر بداخلها */
+  /* (تأكد أن حاوية الفاتورة لها id="receipt-print") */
+  #receipt-print, #receipt-print * {
+    visibility: visible !important;
   }
 
-  #receipt-print,
-  #receipt-container {
+  /* 3. إعدادات الصفحة (للمتصفح) */
+  @page {
+    size: 80mm;  /* حجم ورق الطابعة الفعلي */
+    margin: 1mm; /* هوامش صغيرة جداً */
+  }
+
+  /* 4. ضبط موضع وحجم الفاتورة */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #receipt-print {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100% !important; /* تغيير من 190mm إلى 100% لاستخدام كامل العرض */
-    max-width: 100% !important;
-    margin: 0 !important; /* إزالة الهوامش الجانبية التي كانت تسبب توسيط المحتوى */
-    padding: 2mm !important; /* تقليل المسافة الداخلية من 5mm إلى 2mm */
-    font-size: 22px !important; /* زيادة من 14px إلى 18px للنص الأساسي */
-    line-height: 1.4 !important;
-    font-weight: bold !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    width: 78mm !important; /* العرض (80مم ناقص الهوامش) */
+    margin: 0 !important;
+    padding: 1mm !important;
+    background: #fff !important;
+    color: #000 !important;
+    
+    /* * !! هذا هو أهم جزء لإصلاح الخط !!
+     * نستخدم خط 'monospace' لجعل الأعمدة مستقيمة
+     */
+    font-family: 'Courier New', Courier, monospace !important;
+    
+    /* * !! تعديل حجم الخط (المشكلة التي تواجهك) !!
+     * الخط 8px أو 9px هو الطبيعي لتناسب 48 حرف في السطر.
+     * بما أنك تقول إنه صغير جداً، جرب هذا الحجم:
+     */
+    font-size: 10pt !important; /* <- جرب 10pt (نقاط) */
+    /* إذا كان 10pt ما زال صغيراً، غيره إلى 11pt أو 12pt */
+    /* تحذير: إذا كبرت الخط كثيراً، ستتكسر الأسطر */
+    
+    line-height: 1.3 !important; /* مسافة بين السطور */
+    font-weight: normal !important; /* "normal" أوضح من "bold" في الطابعات الحرارية */
   }
 
-  /* تحسين أحجام الخطوط للعناوين */
-  #receipt-print h1, #receipt-print h2, #receipt-print h3,
-  #receipt-container h1, #receipt-container h2, #receipt-container h3 {
-    font-size: 20px !important; /* زيادة من 14px إلى 20px للعناوين */
-    font-weight: bold !important;
-    margin: 2mm 0 !important;
-    line-height: 1.3 !important;
-  }
-
-  /* تحسين أحجام الخطوط للجداول */
+  /* 5. إعدادات الجداول (الأصناف والأسعار) */
   #receipt-print table,
   #receipt-print th,
-  #receipt-print td,
-  #receipt-container table,
-  #receipt-container th,
-  #receipt-container td {
-    font-size: 16px !important; /* زيادة من 11px إلى 16px للجداول */
+  #receipt-print td {
+    width: 100% !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 9pt !important; /* أصغر قليلاً من النص الرئيسي ليناسب الجدول */
+    font-weight: normal !important;
+    text-align: left;
+    border-collapse: collapse;
+  }
+
+  /* 6. إعدادات العناوين (اسم المحل) */
+  #receipt-print h1, #receipt-print h2 {
+    font-size: 14pt !important; /* عنوان أكبر قليلاً */
     font-weight: bold !important;
-    padding: 3mm !important; /* زيادة المسافة داخل الخلايا من 2mm إلى 3mm */
-    border: 1px solid #000 !important;
+    text-align: center;
+    margin: 2mm 0;
   }
-
-  #receipt-print .MuiTypography-body1,
-  #receipt-print .MuiTypography-body2,
-  #receipt-container .MuiTypography-body1,
-  #receipt-container .MuiTypography-body2 {
-    font-size: 18px !important;
-    line-height: 2.4 !important;
-    font-weight: bold !important;   /* وزن خط أثقل للوضوح */
-  }
-
-  /* تحسين تنسيق الصور */
-  #receipt-print img,
-  #receipt-container img {
-    max-width: 100% !important;
-    height: auto !important;
-    margin: 2mm 0 !important;
-  }
-}
-
-/* Code for printing on Xprinter XP-P53A (58mm) */ 
-@media print { 
-  /* إخفاء كل شيء ما عدا الفاتورة */ 
-  body * { 
-    visibility: hidden; 
-  } 
-
-  .receipt-container, .receipt-container * { 
-    visibility: visible; 
-  } 
-
-  .receipt-container { 
-    position: absolute; 
-    left: 0; 
-    top: 0; 
-  } 
-  
-  /* --- التنسيقات الأساسية لحل المشكلة --- */ 
-
-  /* 1. تحديد عرض الطباعة الفعلي (أهم نقطة) */ 
-  .receipt-container { 
-    width: 48mm; /* العرض الفعلي للطباعة على ورق 58mm */ 
-    font-family: 'Courier New', Courier, monospace; /* خط مناسب للفواتير */ 
-    font-size: 12pt; /* حجم خط مقروء وصغير */ 
-    margin: 0; 
-    padding: 0; 
-  } 
-
-  /* 2. توسيط النصوص كما طلبت */ 
-  .receipt-container { 
-    text-align: center; 
-  } 
-
-  /* 3. ضمان عدم خروج الصور عن الإطار */ 
-  .receipt-container img { 
-    max-width: 100%; 
-    height: auto; 
-  } 
-}
-
-/* تنسيق خاص بفاتورة المبيعات لتتطابق مع فاتورة نقطة البيع */
-#receipt-container .MuiGrid-container .MuiGrid-item .MuiTypography-body1,
-#receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 {
-  display: flex !important;
-  justify-content: space-between !important;
-  margin: 3px 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  font-size: 22px !important; /* زيادة من 14px إلى 18px */
-  line-height: 1.4 !important;
-}
-
-#receipt-container .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong,
-#receipt-print .MuiGrid-container .MuiGrid-item .MuiTypography-body1 strong {
-  display: inline-block !important;
-  text-align: right !important;
-  font-weight: bold !important;
-}
-
-#receipt-print .MuiTableContainer-root,
-#receipt-container .MuiTableContainer-root {
-  margin: 5px 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-#receipt-print .MuiTable-root,
-#receipt-container .MuiTable-root {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  margin: 3px 0 !important;
-  border: 1px dashed #000 !important;
-}
-
-#receipt-print .MuiTableCell-root,
-#receipt-container .MuiTableCell-root {
-  padding: 3mm !important; /* زيادة من 2px 3px إلى 3mm */
-  font-size: 16px !important; /* زيادة من 12px إلى 16px */
-  border: 1px dotted #ccc !important;
-  font-weight: bold !important;
-}
-
-#receipt-print .MuiTypography-body1,
-#receipt-print .MuiTypography-body2 {
-  font-size: 18px !important; /* زيادة من 14px إلى 18px */
-  line-height: 1.4 !important;
-  font-weight: bold !important;   /* وزن خط أثقل للوضوح */
-
 }
