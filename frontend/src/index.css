@@ -1,12 +1,11 @@
 
 
 @media screen {
-  .only-print { display: none !important; }
-  .no-print { display: block !important; }
+  #receipt-print { display: none !important; }
 }
 
 /* ============================================== */
-/* == كود الطباعة الحرارية 80mm (SP-240 U) == */
+/* == كود طباعة CSS لطابعة 80mm (48 حرف) == */
 /* ============================================== */
 
 @media print {
@@ -14,10 +13,11 @@
   /* 1. إخفاء كل شيء في الصفحة ما عدا الفاتورة */
   body * {
     visibility: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* 2. إظهار الفاتورة والعناصر بداخلها */
-  /* (تأكد أن حاوية الفاتورة لها id="receipt-print") */
   #receipt-print, #receipt-print * {
     visibility: visible !important;
   }
@@ -44,21 +44,19 @@
     background: #fff !important;
     color: #000 !important;
     
-    /* * !! هذا هو أهم جزء لإصلاح الخط !!
-     * نستخدم خط 'monospace' لجعل الأعمدة مستقيمة
+    /* * !! أهم جزء: الخط الثابت (Monospace) !!
+     * هذا الخط يجعل كل الحروف (حتى المسافات) بنفس العرض
+     * وهو ضروري لمحاذاة أعمدة الأسعار بشكل صحيح.
      */
     font-family: 'Courier New', Courier, monospace !important;
     
-    /* * !! تعديل حجم الخط (المشكلة التي تواجهك) !!
-     * الخط 8px أو 9px هو الطبيعي لتناسب 48 حرف في السطر.
-     * بما أنك تقول إنه صغير جداً، جرب هذا الحجم:
+    /* * !! تعديل حجم الخط (ليناسب 48 حرف) !!
+     * الطابعة تطبع 48 حرفاً. إذا كان الخط كبيراً، ستتكسر الأسطر.
+     * حجم 9pt (نقاط) هو أفضل توازن بين الوضوح والحجم.
      */
-    font-size: 10pt !important; /* <- جرب 10pt (نقاط) */
-    /* إذا كان 10pt ما زال صغيراً، غيره إلى 11pt أو 12pt */
-    /* تحذير: إذا كبرت الخط كثيراً، ستتكسر الأسطر */
-    
-    line-height: 1.3 !important; /* مسافة بين السطور */
-    font-weight: normal !important; /* "normal" أوضح من "bold" في الطابعات الحرارية */
+    font-size: 9pt !important; /* <- حجم الخط الأساسي */
+    line-height: 1.4 !important; /* مسافة بين السطور */
+    font-weight: normal !important;
   }
 
   /* 5. إعدادات الجداول (الأصناف والأسعار) */
@@ -67,17 +65,19 @@
   #receipt-print td {
     width: 100% !important;
     font-family: 'Courier New', Courier, monospace !important;
-    font-size: 9pt !important; /* أصغر قليلاً من النص الرئيسي ليناسب الجدول */
+    /* حجم خط أصغر قليلاً للجدول لضمان عدم تكسر الأعمدة */
+    font-size: 8pt !important;
     font-weight: normal !important;
     text-align: left;
     border-collapse: collapse;
+    padding: 0.5mm 0 !important; /* مسافة صغيرة بين صفوف الجدول */
   }
 
   /* 6. إعدادات العناوين (اسم المحل) */
-  #receipt-print h1, #receipt-print h2 {
-    font-size: 14pt !important; /* عنوان أكبر قليلاً */
+  #receipt-print h1, #receipt-print h2, #receipt-print p {
+    font-size: 11pt !important; /* عنوان أكبر قليلاً */
     font-weight: bold !important;
-    text-align: center;
-    margin: 2mm 0;
+    text-align: center !important; /* توسيط العناوين */
+    margin: 1.5mm 0 !important;
   }
 }
