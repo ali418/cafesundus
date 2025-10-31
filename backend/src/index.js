@@ -115,11 +115,15 @@ app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD
 const isProduction = process.env.NODE_ENV === 'production';
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100, // Limit each IP to N requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 1000, // Increased default limit for cafe operations
   standardHeaders: true,
   legacyHeaders: false,
   // Do not count health checks towards the limit
   skip: (req) => req.path === '/api/v1/health' || req.path === '/health' || req.path === '/api/health',
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000) / 1000)
+  }
 });
 
 if (isProduction) {
