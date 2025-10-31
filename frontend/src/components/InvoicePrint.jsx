@@ -35,7 +35,17 @@ const InvoicePrint = forwardRef(({ invoice }, ref) => {
   const taxRatePercent = Number(storeSettings?.taxRate) || derivedTaxPercent;
 
   return (
-    <Box ref={ref} id="receipt-container" className="receipt-container" sx={{ p: 3, maxWidth: '210mm', margin: '0 auto', backgroundColor: 'white', color: 'black' }}>
+    <Box ref={ref} id="receipt-to-print" className="receipt-container" sx={{ 
+      p: 3, 
+      maxWidth: '210mm', 
+      margin: '0 auto', 
+      backgroundColor: 'white', 
+      color: 'black',
+      pb: 6, // Extra bottom padding for thermal printers
+      '@media print': { 
+        pb: 8 // Even more padding when printing
+      }
+    }}>
       <Paper elevation={0} sx={{ p: 0 }}>
         {/* Header Section */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -255,6 +265,9 @@ const InvoicePrint = forwardRef(({ invoice }, ref) => {
             </Grid>
           )}
         </Box>
+
+        {/* Extra spacing for thermal printer - ensures complete printing */}
+        <Box sx={{ height: '60px', '@media print': { height: '80px' } }} />
       </Paper>
     </Box>
   );

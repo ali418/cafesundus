@@ -4,131 +4,89 @@
   #receipt-print { display: none !important; }
 }
 
-/* ============================================== */
-/* == كود طباعة CSS لطابعة 80mm (48 حرف) == */
-/* ============================================== */
+/* --- كود الطباعة الجديد (للعزل والتوسيط) --- */
 
 @media print {
 
-  /* 1. إخفاء كل شيء في الصفحة ما عدا الفاتورة */
-  * {
-    visibility: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  /* 1. إخفاء كل عناصر الصفحة */
+  body * {
+    visibility: hidden;
   }
 
-  /* 2. إظهار الفاتورة والعناصر بداخلها */
-  #receipt-print, 
-  #receipt-print *, 
-  .receipt-container,
-  .receipt-container * {
-    visibility: visible !important;
+  /* 2. إظهار الفاتورة فقط + كل العناصر اللي جواها */
+  #receipt-to-print, #receipt-to-print * {
+    visibility: visible;
   }
 
-  /* 3. إعدادات الصفحة (للمتصفح) */
+  /* 3. "عزل" الفاتورة ونقلها لأول الصفحة */
+  #receipt-to-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    width: 80mm; /* تحديد عرض الفاتورة بالضبط */
+    padding-bottom: 20mm !important; /* مساحة إضافية في النهاية للطابعة الحرارية */
+  }
+
+  /* 4. ضبط إعدادات الصفحة للطباعة */
   @page {
-    size: 80mm auto;  /* حجم ورق الطابعة الفعلي */
-    margin: 2mm; /* هوامش صغيرة */
+    size: 80mm auto; /* حجم الورق 80 مم والطول تلقائي */
+    margin: 0;       /* إزالة أي هوامش افتراضية */
   }
 
-  /* 4. ضبط موضع وحجم الفاتورة */
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    height: auto !important;
+  /* 5. (احتياطي) لضمان عدم وجود هوامش غريبة */
+  body, html {
+    margin: 0;
+    padding: 0;
   }
 
-  #receipt-print,
-  .receipt-container {
-    display: block !important;
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 76mm !important; /* العرض (80مم ناقص الهوامش) */
-    margin: 0 !important;
-    padding: 2mm !important;
-    background: #fff !important;
-    color: #000 !important;
-    
-    /* * !! أهم جزء: الخط الثابت (Monospace) !!
-     * هذا الخط يجعل كل الحروف (حتى المسافات) بنفس العرض
-     * وهو ضروري لمحاذاة أعمدة الأسعار بشكل صحيح.
-     */
-    font-family: 'Courier New', Courier, monospace !important;
-    
-    /* * !! تعديل حجم الخط (ليناسب 48 حرف) !!
-     * الطابعة تطبع 48 حرفاً. إذا كان الخط كبيراً، ستتكسر الأسطر.
-     * حجم 10pt (نقاط) هو أفضل توازن بين الوضوح والحجم.
-     */
-    font-size: 10pt !important; /* <- حجم الخط الأساسي */
-    line-height: 1.3 !important; /* مسافة بين السطور */
-    font-weight: normal !important;
+  /* 6. تحسينات إضافية للطابعة الحرارية */
+  #receipt-to-print {
+    page-break-inside: avoid; /* منع تقسيم الفاتورة على صفحات متعددة */
+    orphans: 0; /* السماح بطباعة أي عدد من الأسطر في نهاية الصفحة */
+    widows: 0;  /* السماح بطباعة أي عدد من الأسطر في بداية الصفحة */
   }
 
-  /* 5. إعدادات الجداول (الأصناف والأسعار) */
-  #receipt-print table,
-  #receipt-print th,
-  #receipt-print td,
-  .receipt-container table,
-  .receipt-container th,
-  .receipt-container td {
-    width: 100% !important;
-    font-family: 'Courier New', Courier, monospace !important;
-    /* حجم خط أصغر قليلاً للجدول لضمان عدم تكسر الأعمدة */
-    font-size: 9pt !important;
-    font-weight: normal !important;
-    text-align: left !important;
+  /* 7. إعدادات خاصة للطابعات الحرارية */
+  #receipt-to-print * {
+    color: #000000 !important; /* نص أسود */
+    background-color: transparent !important; /* خلفية شفافة */
+    background: none !important; /* إزالة أي خلفيات */
+    box-shadow: none !important; /* إزالة الظلال */
+    text-shadow: none !important; /* إزالة ظلال النص */
+    border-color: #000000 !important; /* حدود سوداء */
+    -webkit-print-color-adjust: exact !important; /* فرض طباعة الألوان */
+    color-adjust: exact !important; /* فرض طباعة الألوان */
+  }
+
+  /* 8. تحسين الخطوط للطابعة الحرارية */
+  #receipt-to-print {
+    font-family: 'Courier New', monospace !important; /* خط واضح للطابعة الحرارية */
+    font-size: 12px !important; /* حجم خط مناسب */
+    line-height: 1.4 !important; /* مسافة بين الأسطر */
+  }
+
+  /* 9. إعدادات خاصة للجداول */
+  #receipt-to-print table {
     border-collapse: collapse !important;
-    padding: 1px 0 !important; /* مسافة صغيرة بين صفوف الجدول */
-    border: none !important;
+    width: 100% !important;
   }
 
-  /* 6. إعدادات العناوين (اسم المحل) */
-  #receipt-print h1, 
-  #receipt-print h2, 
-  #receipt-print h3,
-  #receipt-print h4,
-  #receipt-print h5,
-  #receipt-print h6,
-  #receipt-print p,
-  .receipt-container h1, 
-  .receipt-container h2, 
-  .receipt-container h3,
-  .receipt-container h4,
-  .receipt-container h5,
-  .receipt-container h6,
-  .receipt-container p {
-    font-size: 11pt !important; /* عنوان أكبر قليلاً */
-    font-weight: bold !important;
-    text-align: center !important; /* توسيط العناوين */
-    margin: 2px 0 !important;
-    padding: 0 !important;
+  #receipt-to-print table, 
+  #receipt-to-print th, 
+  #receipt-to-print td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    background: white !important;
   }
 
-  /* 7. إعدادات خاصة للنصوص */
-  #receipt-print .MuiTypography-root,
-  .receipt-container .MuiTypography-root {
-    font-family: 'Courier New', Courier, monospace !important;
-    color: #000 !important;
-  }
-
-  /* 8. إخفاء العناصر غير المرغوب فيها */
-  .MuiDialog-root,
-  .MuiBackdrop-root,
-  .MuiPaper-root,
-  .MuiDialogTitle-root,
-  .MuiDialogActions-root,
-  button,
-  .no-print {
-    display: none !important;
-  }
-
-  /* 9. إظهار محتوى الإيصال فقط */
-  .MuiDialogContent-root {
-    display: block !important;
-    visibility: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  /* 10. إزالة أي تأثيرات بصرية قد تتداخل مع الطباعة */
+  #receipt-to-print .MuiBox-root,
+  #receipt-to-print .MuiTypography-root,
+  #receipt-to-print .MuiPaper-root {
+    background: transparent !important;
+    color: #000000 !important;
+    box-shadow: none !important;
   }
 }
