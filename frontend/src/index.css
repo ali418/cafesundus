@@ -11,36 +11,43 @@
 @media print {
 
   /* 1. إخفاء كل شيء في الصفحة ما عدا الفاتورة */
-  body * {
+  * {
     visibility: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
   /* 2. إظهار الفاتورة والعناصر بداخلها */
-  #receipt-print, #receipt-print * {
+  #receipt-print, 
+  #receipt-print *, 
+  .receipt-container,
+  .receipt-container * {
     visibility: visible !important;
   }
 
   /* 3. إعدادات الصفحة (للمتصفح) */
   @page {
-    size: 80mm;  /* حجم ورق الطابعة الفعلي */
-    margin: 1mm; /* هوامش صغيرة جداً */
+    size: 80mm auto;  /* حجم ورق الطابعة الفعلي */
+    margin: 2mm; /* هوامش صغيرة */
   }
 
   /* 4. ضبط موضع وحجم الفاتورة */
-  body {
+  html, body {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
   }
 
-  #receipt-print {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 78mm !important; /* العرض (80مم ناقص الهوامش) */
+  #receipt-print,
+  .receipt-container {
+    display: block !important;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 76mm !important; /* العرض (80مم ناقص الهوامش) */
     margin: 0 !important;
-    padding: 1mm !important;
+    padding: 2mm !important;
     background: #fff !important;
     color: #000 !important;
     
@@ -52,32 +59,76 @@
     
     /* * !! تعديل حجم الخط (ليناسب 48 حرف) !!
      * الطابعة تطبع 48 حرفاً. إذا كان الخط كبيراً، ستتكسر الأسطر.
-     * حجم 9pt (نقاط) هو أفضل توازن بين الوضوح والحجم.
+     * حجم 10pt (نقاط) هو أفضل توازن بين الوضوح والحجم.
      */
-    font-size: 9pt !important; /* <- حجم الخط الأساسي */
-    line-height: 1.4 !important; /* مسافة بين السطور */
+    font-size: 10pt !important; /* <- حجم الخط الأساسي */
+    line-height: 1.3 !important; /* مسافة بين السطور */
     font-weight: normal !important;
   }
 
   /* 5. إعدادات الجداول (الأصناف والأسعار) */
   #receipt-print table,
   #receipt-print th,
-  #receipt-print td {
+  #receipt-print td,
+  .receipt-container table,
+  .receipt-container th,
+  .receipt-container td {
     width: 100% !important;
     font-family: 'Courier New', Courier, monospace !important;
     /* حجم خط أصغر قليلاً للجدول لضمان عدم تكسر الأعمدة */
-    font-size: 8pt !important;
+    font-size: 9pt !important;
     font-weight: normal !important;
-    text-align: left;
-    border-collapse: collapse;
-    padding: 0.5mm 0 !important; /* مسافة صغيرة بين صفوف الجدول */
+    text-align: left !important;
+    border-collapse: collapse !important;
+    padding: 1px 0 !important; /* مسافة صغيرة بين صفوف الجدول */
+    border: none !important;
   }
 
   /* 6. إعدادات العناوين (اسم المحل) */
-  #receipt-print h1, #receipt-print h2, #receipt-print p {
+  #receipt-print h1, 
+  #receipt-print h2, 
+  #receipt-print h3,
+  #receipt-print h4,
+  #receipt-print h5,
+  #receipt-print h6,
+  #receipt-print p,
+  .receipt-container h1, 
+  .receipt-container h2, 
+  .receipt-container h3,
+  .receipt-container h4,
+  .receipt-container h5,
+  .receipt-container h6,
+  .receipt-container p {
     font-size: 11pt !important; /* عنوان أكبر قليلاً */
     font-weight: bold !important;
     text-align: center !important; /* توسيط العناوين */
-    margin: 1.5mm 0 !important;
+    margin: 2px 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 7. إعدادات خاصة للنصوص */
+  #receipt-print .MuiTypography-root,
+  .receipt-container .MuiTypography-root {
+    font-family: 'Courier New', Courier, monospace !important;
+    color: #000 !important;
+  }
+
+  /* 8. إخفاء العناصر غير المرغوب فيها */
+  .MuiDialog-root,
+  .MuiBackdrop-root,
+  .MuiPaper-root,
+  .MuiDialogTitle-root,
+  .MuiDialogActions-root,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* 9. إظهار محتوى الإيصال فقط */
+  .MuiDialogContent-root {
+    display: block !important;
+    visibility: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
