@@ -1,7 +1,7 @@
 
 
 @media screen {
-  #receipt-print { display: none !important; }
+  #receipt-to-print { display: none !important; }
 }
 
 /* --- كود الطباعة الجديد (للعزل والتوسيط) --- */
@@ -18,37 +18,60 @@
     visibility: visible;
   }
 
-  /* 3. "عزل" الفاتورة ونقلها لأول الصفحة */
-  #receipt-to-print {
-    position: absolute;
-    left: 0;
-    top: 0;
+  /* 3. توسيط الفاتورة في الصفحة */
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* توسيط أفقي للفاتورة */
     margin: 0;
     padding: 0;
-    width: 80mm; /* تحديد عرض الفاتورة بالضبط */
+  }
+
+  /* 4. "عزل" الفاتورة ونقلها لأول الصفحة */
+  #receipt-to-print {
+    position: relative; /* تغيير من absolute لـ relative للتوسيط */
+    margin: 0;
+    padding: 0;
+    width: 76mm; /* عرض الفاتورة (أقل من 80 للسلامة) */
     padding-bottom: 20mm !important; /* مساحة إضافية في النهاية للطابعة الحرارية */
   }
 
-  /* 4. ضبط إعدادات الصفحة للطباعة */
+  /* 5. ضبط إعدادات الصفحة للطباعة */
   @page {
     size: 80mm auto; /* حجم الورق 80 مم والطول تلقائي */
-    margin: 0;       /* إزالة أي هوامش افتراضية */
+    margin: 2mm;     /* هوامش صغيرة للسلامة */
   }
 
-  /* 5. (احتياطي) لضمان عدم وجود هوامش غريبة */
-  body, html {
+  /* 6. توسيط العناصر داخل الفاتورة */
+  #receipt-to-print .receipt-header,
+  #receipt-to-print .receipt-footer,
+  #receipt-to-print .qr-code-container {
+    text-align: center; /* توسيط النص */
+  }
+
+  /* 7. توسيط الـ QR Code بشكل خاص */
+  #receipt-to-print .qr-code-container svg,
+  #receipt-to-print .qr-code-container img,
+  #receipt-to-print .qr-code-container canvas {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* 8. (احتياطي) لضمان عدم وجود هوامش غريبة */
+  html {
     margin: 0;
     padding: 0;
   }
 
-  /* 6. تحسينات إضافية للطابعة الحرارية */
+  /* 9. تحسينات إضافية للطابعة الحرارية */
   #receipt-to-print {
     page-break-inside: avoid; /* منع تقسيم الفاتورة على صفحات متعددة */
     orphans: 0; /* السماح بطباعة أي عدد من الأسطر في نهاية الصفحة */
     widows: 0;  /* السماح بطباعة أي عدد من الأسطر في بداية الصفحة */
   }
 
-  /* 7. إعدادات خاصة للطابعات الحرارية */
+  /* 10. إعدادات خاصة للطابعات الحرارية */
   #receipt-to-print * {
     color: #000000 !important; /* نص أسود */
     background-color: transparent !important; /* خلفية شفافة */
@@ -60,14 +83,14 @@
     print-color-adjust: exact !important; /* فرض طباعة الألوان */
   }
 
-  /* 8. تحسين الخطوط للطابعة الحرارية */
+  /* 11. تحسين الخطوط للطابعة الحرارية */
   #receipt-to-print {
     font-family: 'Courier New', monospace !important; /* خط واضح للطابعة الحرارية */
     font-size: 12px !important; /* حجم خط مناسب */
     line-height: 1.4 !important; /* مسافة بين الأسطر */
   }
 
-  /* 9. إعدادات خاصة للجداول */
+  /* 12. إعدادات خاصة للجداول */
   #receipt-to-print table {
     border-collapse: collapse !important;
     width: 100% !important;
@@ -81,7 +104,7 @@
     background: white !important;
   }
 
-  /* 10. إزالة أي تأثيرات بصرية قد تتداخل مع الطباعة */
+  /* 13. إزالة أي تأثيرات بصرية قد تتداخل مع الطباعة */
   #receipt-to-print .MuiBox-root,
   #receipt-to-print .MuiTypography-root,
   #receipt-to-print .MuiPaper-root {
