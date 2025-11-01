@@ -122,7 +122,7 @@ const ReceiptPrint = ({ receiptData, onPrintFinished }) => {
         </Typography>
 
         {receiptData?.storeSettings?.receiptShowOnlineOrderQR && (
-          <Box sx={{ textAlign: 'center', my: 1 }}>
+          <div className="qr-code-container">
             <Typography variant="caption" display="block" gutterBottom>
               {t('online:scanQRCode', 'امسح رمز QR للطلب أونلاين')}
             </Typography>
@@ -139,7 +139,7 @@ const ReceiptPrint = ({ receiptData, onPrintFinished }) => {
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {t('online:orVisitLink', 'أو قم بزيارة هذا الرابط')}: {`${window.location.origin}/online-order`}
             </Typography>
-          </Box>
+          </div>
         )}
       </div>
     </Box>
