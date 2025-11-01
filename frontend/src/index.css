@@ -1,72 +1,92 @@
 
 
-/* --- كود إخفاء الفاتورة من المتصفح --- */
 @media screen {
-  #receipt-to-print {
-    /* بنخفيه تماماً من الشاشة العادية.
-      الـ @media print اللي تحت هيعرف يظهره تاني 
-    */
-    display: none;
-  }
+  #receipt-print { display: none !important; }
 }
 
-/* --- كود الطباعة الجديد (توسيط + هوامش) --- */
+/* --- كود الطباعة الجديد (للعزل والتوسيط) --- */
+
 @media print {
 
-  /* 1. تجهيز الـ body لتوسيط الفاتورة */
-  body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-  }
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;  /* <<< ده هيوسط الفاتورة في نص الورقة */
-  }
-
-  /* 2. إخفاء كل عناصر الصفحة */
+  /* 1. إخفاء كل عناصر الصفحة */
   body * {
     visibility: hidden;
   }
 
-  /* 3. إظهار الفاتورة فقط وكل اللي جواها */
+  /* 2. إظهار الفاتورة فقط + كل العناصر اللي جواها */
   #receipt-to-print, #receipt-to-print * {
     visibility: visible;
   }
 
-  /* 4. ضبط مقاسات الفاتورة (مع هامش أمان) */
+  /* 3. "عزل" الفاتورة ونقلها لأول الصفحة */
   #receipt-to-print {
-    /* (مهم جداً) شيلنا الـ position: absolute */
-    
-    /* عرض الورقة 80 مم، لكن هنديها 76 مم بس 
-      عشان نسيب 2 مم هامش يمين و 2 مم شمال 
-    */
-    width: 76mm;
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    width: 80mm; /* تحديد عرض الفاتورة بالضبط */
+    padding-bottom: 20mm !important; /* مساحة إضافية في النهاية للطابعة الحرارية */
+  }
+
+  /* 4. ضبط إعدادات الصفحة للطباعة */
+  @page {
+    size: 80mm auto; /* حجم الورق 80 مم والطول تلقائي */
+    margin: 0;       /* إزالة أي هوامش افتراضية */
+  }
+
+  /* 5. (احتياطي) لضمان عدم وجود هوامش غريبة */
+  body, html {
     margin: 0;
     padding: 0;
   }
 
-  /* 5. ضبط إعدادات الصفحة للطباعة */
-  @page {
-    size: 80mm auto; /* حجم الورق 80 مم */
-    margin: 0;       /* إزالة أي هوامش افتراضية */
-  }
-  
-  /* 6. (مهم) توسيط العناصر الداخلية 
-    اللي إديناها className في الخطوة 1 
-  */
-  #receipt-to-print .receipt-header, 
-  #receipt-to-print .receipt-footer, 
-  #receipt-to-print .qr-code-container {
-    text-align: center;
+  /* 6. تحسينات إضافية للطابعة الحرارية */
+  #receipt-to-print {
+    page-break-inside: avoid; /* منع تقسيم الفاتورة على صفحات متعددة */
+    orphans: 0; /* السماح بطباعة أي عدد من الأسطر في نهاية الصفحة */
+    widows: 0;  /* السماح بطباعة أي عدد من الأسطر في بداية الصفحة */
   }
 
-  /* 7. (مهم) لو الـ QR Code مش بيتوسط لوحده */
-  #receipt-to-print .qr-code-container svg, 
-  #receipt-to-print .qr-code-container img {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
+  /* 7. إعدادات خاصة للطابعات الحرارية */
+  #receipt-to-print * {
+    color: #000000 !important; /* نص أسود */
+    background-color: transparent !important; /* خلفية شفافة */
+    background: none !important; /* إزالة أي خلفيات */
+    box-shadow: none !important; /* إزالة الظلال */
+    text-shadow: none !important; /* إزالة ظلال النص */
+    border-color: #000000 !important; /* حدود سوداء */
+    -webkit-print-color-adjust: exact !important; /* فرض طباعة الألوان */
+    print-color-adjust: exact !important; /* فرض طباعة الألوان */
+  }
+
+  /* 8. تحسين الخطوط للطابعة الحرارية */
+  #receipt-to-print {
+    font-family: 'Courier New', monospace !important; /* خط واضح للطابعة الحرارية */
+    font-size: 12px !important; /* حجم خط مناسب */
+    line-height: 1.4 !important; /* مسافة بين الأسطر */
+  }
+
+  /* 9. إعدادات خاصة للجداول */
+  #receipt-to-print table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  #receipt-to-print table, 
+  #receipt-to-print th, 
+  #receipt-to-print td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    background: white !important;
+  }
+
+  /* 10. إزالة أي تأثيرات بصرية قد تتداخل مع الطباعة */
+  #receipt-to-print .MuiBox-root,
+  #receipt-to-print .MuiTypography-root,
+  #receipt-to-print .MuiPaper-root {
+    background: transparent !important;
+    color: #000000 !important;
+    box-shadow: none !important;
   }
 }
