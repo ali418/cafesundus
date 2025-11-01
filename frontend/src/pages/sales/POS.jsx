@@ -58,6 +58,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 // import { QRCodeSVG } from 'qrcode.react';
 import QRCodeWrapper from '../../components/QRCodeWrapper';
+import ReceiptPrint from '../../components/ReceiptPrint';
 
 // Placeholder image for products without images
 const placeholderImage = `data:image/svg+xml;utf8,
@@ -185,30 +186,17 @@ const POS = () => {
   
   // State for receipt data to show server receipt number
   const [receiptData, setReceiptData] = useState(null);
+  
+  // State for controlling the print component
+  const [showPrintComponent, setShowPrintComponent] = useState(false);
+  
  const storeSettings = useSelector(selectStoreSettings);
 
   // Auto-print receipt when dialog opens if enabled in settings
   useEffect(() => {
     if (receiptDialogOpen && storeSettings?.receiptPrintAutomatically) {
-      const timer = setTimeout(() => {
-        try {
-          window.print();
-          // إضافة مستمع حدث لإغلاق نافذة الطباعة بعد الانتهاء
-          window.addEventListener('afterprint', () => {
-            // إغلاق نافذة الطباعة بعد الانتهاء
-            setTimeout(() => {
-              completeSale();
-            }, 500);
-          }, { once: true });
-        } catch (e) {
-          console.error('Auto print failed:', e);
-          // في حالة فشل الطباعة، استمر في إغلاق النافذة
-          setTimeout(() => {
-            completeSale();
-          }, 500);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
+      // إظهار كومبوننت الطباعة بدلاً من استدعاء window.print() مباشرة
+      setShowPrintComponent(true);
     }
   }, [receiptDialogOpen, storeSettings?.receiptPrintAutomatically]);
 
@@ -446,9 +434,21 @@ const POS = () => {
     setSelectedCategory(1);
     setAmountPaid('');
     setReceiptDialogOpen(false);
+    setShowPrintComponent(false); // إخفاء كومبوننت الطباعة
 
     // Navigate to sales page to view the new record
     navigate('/sales');
+  };
+
+  // دالة للتعامل مع انتهاء الطباعة
+  const handlePrintComplete = () => {
+    setShowPrintComponent(false);
+    // إضافة مستمع حدث لإغلاق نافذة الطباعة بعد الانتهاء
+    window.addEventListener('afterprint', () => {
+      setTimeout(() => {
+        completeSale();
+      }, 500);
+    }, { once: true });
   };
   
   // Handle canceling the sale
@@ -828,7 +828,7 @@ const POS = () => {
       <Dialog open={receiptDialogOpen} onClose={() => setReceiptDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('sales:receipt')}</DialogTitle>
         <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
-         <Box id="receipt-print">
+         <Box id="receipt-to-print">
             <div className="receipt-header">
               {storeSettings?.receiptShowLogo && storeSettings?.logoUrl && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
@@ -952,22 +952,8 @@ const POS = () => {
           <Button 
             startIcon={<Print />} 
             onClick={() => {
-              try {
-                window.print();
-                // إضافة مستمع حدث لإغلاق نافذة الطباعة بعد الانتهاء
-                window.addEventListener('afterprint', () => {
-                  // إغلاق نافذة الطباعة بعد الانتهاء
-                  setTimeout(() => {
-                    completeSale();
-                  }, 500);
-                }, { once: true });
-              } catch (e) {
-                console.error('Manual print failed:', e);
-                // في حالة فشل الطباعة، استمر في إغلاق النافذة
-                setTimeout(() => {
-                  completeSale();
-                }, 500);
-              }
+              // إظهار كومبوننت الطباعة بدلاً من استدعاء window.print() مباشرة
+              setShowPrintComponent(true);
             }}
           >
             {t('sales:printReceipt')}
@@ -983,6 +969,26 @@ const POS = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* كومبوننت الطباعة المنفصل */}
+      {showPrintComponent && (
+        <ReceiptPrint
+          receiptData={receiptData}
+          cartItems={cartItems}
+          selectedCustomer={selectedCustomer}
+          currentUser={currentUser}
+          storeSettings={storeSettings}
+          currency={currency}
+          subtotal={subtotal}
+          tax={tax}
+          taxRatePercent={taxRatePercent}
+          total={total}
+          amountPaid={amountPaid}
+          change={change}
+          paymentMethod={paymentMethod}
+          onPrintComplete={handlePrintComplete}
+        />
+      )}
     </Box>
   );
 };
