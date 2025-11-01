@@ -187,16 +187,17 @@ const POS = () => {
   // State for receipt data to show server receipt number
   const [receiptData, setReceiptData] = useState(null);
   
-  // State for controlling the print component
-  const [showPrintComponent, setShowPrintComponent] = useState(false);
+  // State for controlling the print component - Conditional Rendering للطباعة
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printReceiptData, setPrintReceiptData] = useState(null);
   
  const storeSettings = useSelector(selectStoreSettings);
 
   // Auto-print receipt when dialog opens if enabled in settings
   useEffect(() => {
     if (receiptDialogOpen && storeSettings?.receiptPrintAutomatically) {
-      // إظهار كومبوننت الطباعة بدلاً من استدعاء window.print() مباشرة
-      setShowPrintComponent(true);
+      // استخدام الـ Conditional Rendering للطباعة
+      handlePrintReceipt();
     }
   }, [receiptDialogOpen, storeSettings?.receiptPrintAutomatically]);
 
@@ -425,6 +426,36 @@ const POS = () => {
     }
   };
   
+  // دالة الطباعة الجديدة باستخدام Conditional Rendering
+  const handlePrintReceipt = () => {
+    // تجهيز بيانات الفاتورة للطباعة
+    const printData = {
+      receiptNumber: receiptData?.receiptNumber || 'INV-9010',
+      createdSale: receiptData?.createdSale,
+      cartItems,
+      selectedCustomer,
+      currentUser,
+      storeSettings,
+      currency,
+      subtotal,
+      tax,
+      total,
+      amountPaid: parseFloat(amountPaid || 0),
+      change: change > 0 ? change : 0,
+      paymentMethod,
+      taxRatePercent
+    };
+    
+    setPrintReceiptData(printData);
+    setIsPrinting(true);
+  };
+  
+  // دالة للتعامل مع انتهاء الطباعة
+  const handlePrintFinished = () => {
+    setIsPrinting(false);
+    setPrintReceiptData(null);
+  };
+  
   // Handle completing the sale
   const completeSale = () => {
     // Reset everything
@@ -434,22 +465,23 @@ const POS = () => {
     setSelectedCategory(1);
     setAmountPaid('');
     setReceiptDialogOpen(false);
-    setShowPrintComponent(false); // إخفاء كومبوننت الطباعة
+    setIsPrinting(false); // إيقاف الطباعة
+    setPrintReceiptData(null); // مسح بيانات الطباعة
 
     // Navigate to sales page to view the new record
     navigate('/sales');
   };
 
-  // دالة للتعامل مع انتهاء الطباعة
-  const handlePrintComplete = () => {
-    setShowPrintComponent(false);
-    // إضافة مستمع حدث لإغلاق نافذة الطباعة بعد الانتهاء
-    window.addEventListener('afterprint', () => {
-      setTimeout(() => {
-        completeSale();
-      }, 500);
-    }, { once: true });
-  };
+  // دالة للتعامل مع انتهاء الطباعة - إزالة الدالة القديمة
+  // const handlePrintComplete = () => {
+  //   setShowPrintComponent(false);
+  //   // إضافة مستمع حدث لإغلاق نافذة الطباعة بعد الانتهاء
+  //   window.addEventListener('afterprint', () => {
+  //     setTimeout(() => {
+  //       completeSale();
+  //     }, 500);
+  //   }, { once: true });
+  // };
   
   // Handle canceling the sale
   const cancelSale = () => {
@@ -824,137 +856,29 @@ const POS = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Receipt Dialog */}
+      {/* Receipt Dialog - محتوى مبسط للعرض فقط */}
       <Dialog open={receiptDialogOpen} onClose={() => setReceiptDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('sales:receipt')}</DialogTitle>
         <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
-         <Box id="receipt-to-print">
-            <div className="receipt-header">
-              {storeSettings?.receiptShowLogo && storeSettings?.logoUrl && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-                  <img src={storeSettings.logoUrl} alt="logo" style={{ maxHeight: 60, objectFit: 'contain' }} />
-                </Box>
-              )}
-              <Typography variant="h6" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
-                {storeSettings?.name || t('appName')}
-              </Typography>
-              <Typography variant="body2" align="center" gutterBottom>
-                {[storeSettings?.address, storeSettings?.city, storeSettings?.country].filter(Boolean).join(', ')}
-              </Typography>
-              {storeSettings?.phone && (
-                <Typography variant="body2" align="center" gutterBottom>
-                  Tel: {storeSettings.phone}
-                </Typography>
-              )}
-              
-              <Typography variant="subtitle2" align="center" gutterBottom>
-                {t('sales:receiptNumber')}: {receiptData?.receiptNumber || 'INV-9010'}
-              </Typography>
-              <Typography variant="subtitle2" align="center" gutterBottom>
-                {t('sales:date')}: {new Date(receiptData?.createdSale?.createdAt || Date.now()).toLocaleString('ar-EG')}
-              </Typography>
-              {currentUser && (
-                <Typography variant="subtitle2" align="center" gutterBottom>
-                  {t('sales:cashier')}: {currentUser?.fullName || currentUser?.username || currentUser?.name || 'Admin User'}
-                </Typography>
-              )}
-              <Typography variant="subtitle2" align="center" gutterBottom>
-                {t('sales:customer')}: {t(`sales.customers.${selectedCustomer?.name}`, { defaultValue: selectedCustomer?.name || 'walkInCustomer' })}
-              </Typography>
-            </div>
-            
-            <div className="receipt-items">
-              <Typography variant="subtitle1" align="center" gutterBottom>
-                {t('sales:items')}
-              </Typography>
-              {cartItems.map((item) => (
-                <Box key={item.id} sx={{ mb: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {item.name} × {item.quantity}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">
-                      {currency.symbol} {item.price.toFixed(2)} × {item.quantity}
-                    </Typography>
-                    <Typography variant="body2">
-                      {currency.symbol} {(item.price * item.quantity).toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </div>
-            
-            <div className="receipt-totals">
-              <Typography variant="subtitle2" align="right">
-                <strong>{t('sales:subtotal')}:</strong> {currency.symbol} {subtotal.toFixed(2)}
-              </Typography>
-              {storeSettings?.receiptShowTaxDetails && (
-                <Typography variant="subtitle2" align="right">
-                  <strong>{t('sales:tax')} ({taxRatePercent}%):</strong> {currency.symbol} {tax.toFixed(2)}
-                </Typography>
-              )}
-              <Typography variant="subtitle2" align="right">
-                <strong>{t('sales:total')}:</strong> {currency.symbol} {total.toFixed(2)}
-              </Typography>
-            </div>
-            
-            <div className="receipt-payment-info">
-              <Typography variant="subtitle2" align="center">
-                <strong>{t('sales:amountPaid')}:</strong> {currency.symbol} {(parseFloat(amountPaid || 0)).toFixed(2)}
-              </Typography>
-              <Typography variant="subtitle2" align="center">
-                <strong>{t('sales:changeAmount')}:</strong> {currency.symbol} {(change > 0 ? change : 0).toFixed(2)}
-              </Typography>
-              <Typography variant="subtitle2" align="center">
-                <strong>{t('sales:paymentMethod')}:</strong> {t(`sales:paymentMethods.${paymentMethod}`)}
-              </Typography>
-            </div>
-            
-            <div className="receipt-footer">
-              {storeSettings?.invoiceTerms && (
-                <Typography
-                  variant="caption"
-                  align="center"
-                  display="block"
-                  sx={{ whiteSpace: 'pre-line', mb: 1, color: 'text.secondary', fontSize: '0.7rem' }}
-                >
-                  {storeSettings.invoiceTerms}
-                </Typography>
-              )}
-              <Typography variant="body2" align="center" sx={{ fontStyle: 'italic' }}>
-                {storeSettings?.receiptFooterText || t('thankYou')}
-              </Typography>
-
-             {storeSettings?.receiptShowOnlineOrderQR && (
-               <Box sx={{ textAlign: 'center', my: 1 }}>
-                 <Typography variant="caption" display="block" gutterBottom>
-                   {t('online:scanQRCode', 'امسح رمز QR للطلب أونلاين')}
-                 </Typography>
-                 <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                   <QRCodeWrapper
-                     value={`${window.location.origin}/online-order`}
-                     size={120}
-                     level="M"
-                     includeMargin
-                     bgColor="#FFFFFF"
-                     fgColor="#000000"
-                   />
-                 </Box>
-                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                   {t('online:orVisitLink', 'أو قم بزيارة هذا الرابط')}: {`${window.location.origin}/online-order`}
-                 </Typography>
-               </Box>
-             )}
-            </div>
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('sales:saleCompleted')}
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              {t('sales:receiptNumber')}: {receiptData?.receiptNumber || 'INV-9010'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('sales:total')}: {currency.symbol} {total.toFixed(2)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              {t('sales:useButtonsBelowToPrintOrShare')}
+            </Typography>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button 
             startIcon={<Print />} 
-            onClick={() => {
-              // إظهار كومبوننت الطباعة بدلاً من استدعاء window.print() مباشرة
-              setShowPrintComponent(true);
-            }}
+            onClick={handlePrintReceipt}
           >
             {t('sales:printReceipt')}
           </Button>
@@ -970,23 +894,11 @@ const POS = () => {
         </DialogActions>
       </Dialog>
 
-      {/* كومبوننت الطباعة المنفصل */}
-      {showPrintComponent && (
+      {/* كومبوننت الطباعة باستخدام Conditional Rendering */}
+      {isPrinting && printReceiptData && (
         <ReceiptPrint
-          receiptData={receiptData}
-          cartItems={cartItems}
-          selectedCustomer={selectedCustomer}
-          currentUser={currentUser}
-          storeSettings={storeSettings}
-          currency={currency}
-          subtotal={subtotal}
-          tax={tax}
-          taxRatePercent={taxRatePercent}
-          total={total}
-          amountPaid={amountPaid}
-          change={change}
-          paymentMethod={paymentMethod}
-          onPrintComplete={handlePrintComplete}
+          receiptData={printReceiptData}
+          onPrintFinished={handlePrintFinished}
         />
       )}
     </Box>

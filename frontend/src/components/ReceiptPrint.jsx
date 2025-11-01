@@ -3,57 +3,43 @@ import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import QRCodeWrapper from './QRCodeWrapper';
 
-const ReceiptPrint = ({ 
-  receiptData, 
-  cartItems, 
-  selectedCustomer, 
-  currentUser, 
-  storeSettings, 
-  currency, 
-  subtotal, 
-  tax, 
-  taxRatePercent, 
-  total, 
-  amountPaid, 
-  change, 
-  paymentMethod,
-  onPrintComplete 
-}) => {
+const ReceiptPrint = ({ receiptData, onPrintFinished }) => {
   const { t } = useTranslation();
 
-  // هذا الـ useEffect سيعمل بمجرد أن يتم render للكومبوننت في الـ DOM
+  // الـ Hook ده هيشتغل مرة واحدة بس أول ما الكومبوننت يترسم
   useEffect(() => {
-    // إعطاء React وقت قصير لإنهاء الـ render
-    const printTimer = setTimeout(() => {
-      window.print();
-      
-      // استدعاء callback بعد الطباعة (اختياري)
-      if (onPrintComplete) {
-        onPrintComplete();
-      }
-    }, 100);
+    // 3. اطبع الفاتورة
+    window.print();
 
-    // تنظيف الـ timer عند unmount
-    return () => clearTimeout(printTimer);
-  }, []); // [] يعني أنه سيعمل مرة واحدة فقط عند الـ mount
+    // 4. بلغ الكومبوننت الأب إن الطباعة خلصت
+    // (بنحطها جوه setTimeout صغير عشان نضمن إن نافذة الطباعة قفلت)
+    const timer = setTimeout(() => {
+      onPrintFinished();
+    }, 100); // 100 ميلي ثانية كافية
+
+    // (Cleanup function)
+    return () => clearTimeout(timer);
+  }, []); // [] معناها: اشتغل مرة واحدة بس
+
+  // هنا تصميم الفاتورة نفسها
 
   return (
-    <Box id="receipt-to-print">
+    <Box id="receipt-to-print"> {/* اتأكد إن الـ ID ده مطابق للـ CSS */}
       <div className="receipt-header">
-        {storeSettings?.receiptShowLogo && storeSettings?.logoUrl && (
+        {receiptData?.storeSettings?.receiptShowLogo && receiptData?.storeSettings?.logoUrl && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-            <img src={storeSettings.logoUrl} alt="logo" style={{ maxHeight: 60, objectFit: 'contain' }} />
+            <img src={receiptData.storeSettings.logoUrl} alt="logo" style={{ maxHeight: 60, objectFit: 'contain' }} />
           </Box>
         )}
         <Typography variant="h6" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
-          {storeSettings?.name || t('appName')}
+          {receiptData?.storeSettings?.name || t('appName')}
         </Typography>
         <Typography variant="body2" align="center" gutterBottom>
-          {[storeSettings?.address, storeSettings?.city, storeSettings?.country].filter(Boolean).join(', ')}
+          {[receiptData?.storeSettings?.address, receiptData?.storeSettings?.city, receiptData?.storeSettings?.country].filter(Boolean).join(', ')}
         </Typography>
-        {storeSettings?.phone && (
+        {receiptData?.storeSettings?.phone && (
           <Typography variant="body2" align="center" gutterBottom>
-            Tel: {storeSettings.phone}
+            Tel: {receiptData.storeSettings.phone}
           </Typography>
         )}
         
@@ -63,13 +49,13 @@ const ReceiptPrint = ({
         <Typography variant="subtitle2" align="center" gutterBottom>
           {t('sales:date')}: {new Date(receiptData?.createdSale?.createdAt || Date.now()).toLocaleString('ar-EG')}
         </Typography>
-        {currentUser && (
+        {receiptData?.currentUser && (
           <Typography variant="subtitle2" align="center" gutterBottom>
-            {t('sales:cashier')}: {currentUser?.fullName || currentUser?.username || currentUser?.name || 'Admin User'}
+            {t('sales:cashier')}: {receiptData.currentUser?.fullName || receiptData.currentUser?.username || receiptData.currentUser?.name || 'Admin User'}
           </Typography>
         )}
         <Typography variant="subtitle2" align="center" gutterBottom>
-          {t('sales:customer')}: {t(`sales.customers.${selectedCustomer?.name}`, { defaultValue: selectedCustomer?.name || 'walkInCustomer' })}
+          {t('sales:customer')}: {t(`sales.customers.${receiptData?.selectedCustomer?.name}`, { defaultValue: receiptData?.selectedCustomer?.name || 'walkInCustomer' })}
         </Typography>
       </div>
       
@@ -77,17 +63,17 @@ const ReceiptPrint = ({
         <Typography variant="subtitle1" align="center" gutterBottom>
           {t('sales:items')}
         </Typography>
-        {cartItems.map((item) => (
+        {receiptData?.cartItems?.map((item) => (
           <Box key={item.id} sx={{ mb: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
               {item.name} × {item.quantity}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2">
-                {currency.symbol} {item.price.toFixed(2)} × {item.quantity}
+                {receiptData?.currency?.symbol} {item.price.toFixed(2)} × {item.quantity}
               </Typography>
               <Typography variant="body2">
-                {currency.symbol} {(item.price * item.quantity).toFixed(2)}
+                {receiptData?.currency?.symbol} {(item.price * item.quantity).toFixed(2)}
               </Typography>
             </Box>
           </Box>
@@ -96,46 +82,46 @@ const ReceiptPrint = ({
       
       <div className="receipt-totals">
         <Typography variant="subtitle2" align="right">
-          <strong>{t('sales:subtotal')}:</strong> {currency.symbol} {subtotal.toFixed(2)}
+          <strong>{t('sales:subtotal')}:</strong> {receiptData?.currency?.symbol} {receiptData?.subtotal?.toFixed(2)}
         </Typography>
-        {storeSettings?.receiptShowTaxDetails && (
+        {receiptData?.storeSettings?.receiptShowTaxDetails && (
           <Typography variant="subtitle2" align="right">
-            <strong>{t('sales:tax')} ({taxRatePercent}%):</strong> {currency.symbol} {tax.toFixed(2)}
+            <strong>{t('sales:tax')} ({receiptData?.taxRatePercent}%):</strong> {receiptData?.currency?.symbol} {receiptData?.tax?.toFixed(2)}
           </Typography>
         )}
         <Typography variant="subtitle2" align="right">
-          <strong>{t('sales:total')}:</strong> {currency.symbol} {total.toFixed(2)}
+          <strong>{t('sales:total')}:</strong> {receiptData?.currency?.symbol} {receiptData?.total?.toFixed(2)}
         </Typography>
       </div>
       
       <div className="receipt-payment-info">
         <Typography variant="subtitle2" align="center">
-          <strong>{t('sales:amountPaid')}:</strong> {currency.symbol} {(parseFloat(amountPaid || 0)).toFixed(2)}
+          <strong>{t('sales:amountPaid')}:</strong> {receiptData?.currency?.symbol} {receiptData?.amountPaid?.toFixed(2)}
         </Typography>
         <Typography variant="subtitle2" align="center">
-          <strong>{t('sales:changeAmount')}:</strong> {currency.symbol} {(change > 0 ? change : 0).toFixed(2)}
+          <strong>{t('sales:changeAmount')}:</strong> {receiptData?.currency?.symbol} {receiptData?.change?.toFixed(2)}
         </Typography>
         <Typography variant="subtitle2" align="center">
-          <strong>{t('sales:paymentMethod')}:</strong> {t(`sales:paymentMethods.${paymentMethod}`)}
+          <strong>{t('sales:paymentMethod')}:</strong> {t(`sales:paymentMethods.${receiptData?.paymentMethod}`)}
         </Typography>
       </div>
       
       <div className="receipt-footer">
-        {storeSettings?.invoiceTerms && (
+        {receiptData?.storeSettings?.invoiceTerms && (
           <Typography
             variant="caption"
             align="center"
             display="block"
             sx={{ whiteSpace: 'pre-line', mb: 1, color: 'text.secondary', fontSize: '0.7rem' }}
           >
-            {storeSettings.invoiceTerms}
+            {receiptData.storeSettings.invoiceTerms}
           </Typography>
         )}
         <Typography variant="body2" align="center" sx={{ fontStyle: 'italic' }}>
-          {storeSettings?.receiptFooterText || t('thankYou')}
+          {receiptData?.storeSettings?.receiptFooterText || t('thankYou')}
         </Typography>
 
-        {storeSettings?.receiptShowOnlineOrderQR && (
+        {receiptData?.storeSettings?.receiptShowOnlineOrderQR && (
           <Box sx={{ textAlign: 'center', my: 1 }}>
             <Typography variant="caption" display="block" gutterBottom>
               {t('online:scanQRCode', 'امسح رمز QR للطلب أونلاين')}
