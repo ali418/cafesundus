@@ -25,9 +25,15 @@ const OnlineOrderSettings = () => {
         setLoading(true);
         const s = await apiService.getSettings();
         setEnabled(Boolean(s.online_orders_enabled ?? true));
-        setStartTime(s.online_orders_start_time || '00:00');
-        setEndTime(s.online_orders_end_time || '23:59');
-        setDays(Array.isArray(s.online_orders_days) ? s.online_orders_days : [0,1,2,3,4,5,6]);
+        // Backend may return HH:mm:ss; time input expects HH:mm
+        const start = (s.online_orders_start_time || '00:00').slice(0, 5);
+        const end = (s.online_orders_end_time || '23:59').slice(0, 5);
+        setStartTime(start);
+        setEndTime(end);
+        // Ensure days are numeric 0-6 even if backend returns strings
+        const rawDays = Array.isArray(s.online_orders_days) ? s.online_orders_days : [0,1,2,3,4,5,6];
+        const numericDays = rawDays.map(d => Number(d)).filter(n => Number.isInteger(n));
+        setDays(numericDays);
       } catch (e) {
         console.error('Failed to load settings', e);
         toast.error(t('online:scheduleUpdateFailed', 'فشل تحميل إعدادات الجدولة'));
@@ -49,7 +55,8 @@ const OnlineOrderSettings = () => {
         online_orders_enabled: enabled,
         online_orders_start_time: startTime,
         online_orders_end_time: endTime,
-        online_orders_days: days,
+        // Ensure payload days are numbers 0-6
+        online_orders_days: (Array.isArray(days) ? days : []).map(d => Number(d)).filter(n => Number.isInteger(n)),
       };
       await apiService.updateSettings(payload);
       toast.success(t('online:scheduleUpdated', 'تم تحديث جدول الطلبات بنجاح'));
