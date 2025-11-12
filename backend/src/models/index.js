@@ -83,7 +83,8 @@ Object.keys(db).forEach(modelName => {
 });
 
 // Sync database models (create tables if they don't exist)
-sequelize.sync({ force: false, alter: true }) // Using alter:true to apply changes without dropping tables
+// Avoid automatic ALTERs; rely on explicit migrations/scripts to change schema
+sequelize.sync({ force: false, alter: false })
   .then(() => {
     console.log('Database synchronized successfully - tables updated');
     
