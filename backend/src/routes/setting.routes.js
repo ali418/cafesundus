@@ -26,6 +26,19 @@ router.put(
     body('tax_rate').optional({ nullable: true }).isFloat({ min: 0 }),
     body('logo_url').optional({ nullable: true }).isString(),
     body('language').optional().isString(),
+    // Online order availability fields
+    body('online_orders_enabled').optional({ nullable: true }).isBoolean(),
+    body('online_orders_start_time').optional({ nullable: true }).isString(),
+    body('online_orders_end_time').optional({ nullable: true }).isString(),
+    body('online_orders_days')
+      .optional({ nullable: true })
+      .custom(value => {
+        if (value === null || value === undefined) return true;
+        if (!Array.isArray(value)) throw new Error('online_orders_days must be an array');
+        const ok = value.every(v => Number.isInteger(v) && v >= 0 && v <= 6);
+        if (!ok) throw new Error('online_orders_days must contain integers 0-6');
+        return true;
+      }),
     // Invoice fields
     body('invoice_prefix').optional({ nullable: true }).isString(),
     body('invoice_suffix').optional({ nullable: true }).isString(),
