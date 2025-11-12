@@ -272,6 +272,15 @@ const PORT = Number(process.env.PORT || 3000);
         await db.sequelize.query('ALTER TABLE "products" ADD COLUMN "barcode" VARCHAR(50);');
         console.log('Added barcode column to products table');
       }
+
+      // Ensure products.show_online column exists
+      const [onlineRes] = await db.sequelize.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'show_online';"
+      );
+      if (!onlineRes || onlineRes.length === 0) {
+        await db.sequelize.query('ALTER TABLE "products" ADD COLUMN "show_online" BOOLEAN DEFAULT false NOT NULL;');
+        console.log('Added show_online column to products table');
+      }
     } else {
       console.log('Products table does not exist yet, skipping column alterations');
     }

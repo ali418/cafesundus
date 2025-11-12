@@ -81,4 +81,14 @@
   "airtelInstructions": "After pressing call, the transfer will be executed directly to the number {{phoneNumber}} with amount {{amount}}",
   "yes": "Yes",
   "no": "No"
+  ,
+  "onlineOrderSchedule": "Online Order Schedule",
+  "onlineOrdersEnabled": "Enable Online Orders",
+  "startTime": "Start Time",
+  "endTime": "End Time",
+  "availableDays": "Available Days",
+  "save": "Save",
+  "scheduleUpdated": "Schedule updated successfully",
+  "scheduleUpdateFailed": "Failed to update schedule",
+  "ordersClosedMessage": "Online orders are currently unavailable. Please try during scheduled hours."
 }

@@ -179,6 +179,28 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 4,
     },
+    // Online order availability settings
+    online_orders_enabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
+    online_orders_start_time: {
+      type: DataTypes.STRING(5), // 'HH:mm'
+      allowNull: true,
+      defaultValue: '08:00',
+    },
+    online_orders_end_time: {
+      type: DataTypes.STRING(5), // 'HH:mm'
+      allowNull: true,
+      defaultValue: '22:00',
+    },
+    online_orders_days: {
+      // Array of numbers (0-6) representing JS weekdays (0=Sunday)
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: null,
+    },
   }, {
     tableName: 'settings',
     timestamps: true,

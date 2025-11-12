@@ -43,6 +43,7 @@ import {
   Delete as DeleteIcon,
   Group as GroupIcon,
   Notifications as NotificationsIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectStoreSettings } from '../../redux/slices/settingsSlice';
@@ -254,6 +255,10 @@ const MainLayout = () => {
     
     // إشعارات الطلبات الأونلاين - متاحة للمدير والكاشير
     { text: t('online:onlineOrderNotifications', 'إشعارات الطلبات الأونلاين'), icon: <NotificationsIcon />, path: '/online/notifications', roles: ['admin', 'cashier'] },
+    // إدارة المنتجات الأونلاين - متاحة للمدير فقط
+    { text: t('online:onlineProductManagement', 'إدارة المنتجات الأونلاين'), icon: <InventoryIcon />, path: '/online/products-management', roles: ['admin'] },
+    // جدولة الطلبات الأونلاين - متاحة للمدير فقط
+    { text: t('online:onlineOrderSchedule', 'جدولة الطلبات الأونلاين'), icon: <AccessTimeIcon />, path: '/online/order-schedule', roles: ['admin'] },
     
     // الفواتير - متاحة للمدير والكاشير والمحاسب
     // Removed: Invoices menu

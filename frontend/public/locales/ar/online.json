@@ -81,4 +81,14 @@
   "deliveryIncluded": "رسوم التوصيل مشمولة",
   "yes": "نعم",
   "no": "لا"
+  ,
+  "onlineOrderSchedule": "جدولة الطلبات الأونلاين",
+  "onlineOrdersEnabled": "تفعيل الطلبات الأونلاين",
+  "startTime": "وقت البدء",
+  "endTime": "وقت الانتهاء",
+  "availableDays": "الأيام المتاحة",
+  "save": "حفظ",
+  "scheduleUpdated": "تم تحديث جدول الطلبات بنجاح",
+  "scheduleUpdateFailed": "فشل تحديث جدول الطلبات",
+  "ordersClosedMessage": "الطلبات عبر الإنترنت غير متاحة حالياً. يرجى المحاولة خلال الساعات المحددة."
 }

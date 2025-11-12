@@ -38,6 +38,8 @@ const CustomerForm = lazy(() => import('./pages/customers/CustomerForm'));
 const OnlineOrder = lazy(() => import('./pages/online/OnlineOrder'));
 const OnlineOrderNotifications = lazy(() => import('./pages/online/OnlineOrderNotifications'));
 const QRCodePage = lazy(() => import('./pages/online/QRCodePage'));
+const OnlineProductManagement = lazy(() => import('./pages/online/OnlineProductManagement'));
+const OnlineOrderSettings = lazy(() => import('./pages/online/OnlineOrderSettings'));
 const Reports = lazy(() => import('./pages/reports/Reports'));
 const Settings = lazy(() => import('./pages/Settings'));
 const UpdateSettings = lazy(() => import('./pages/UpdateSettings'));
@@ -404,6 +406,16 @@ const App = () => {
               <Route path="/users" element={
                 <RoleProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingFallback />}><Users /></Suspense>
+                </RoleProtectedRoute>
+              } />
+              <Route path="/online/products-management" element={
+                <RoleProtectedRoute allowedRoles={['admin']}>
+                  <Suspense fallback={<LoadingFallback />}><OnlineProductManagement /></Suspense>
+                </RoleProtectedRoute>
+              } />
+              <Route path="/online/order-schedule" element={
+                <RoleProtectedRoute allowedRoles={['admin']}>
+                  <Suspense fallback={<LoadingFallback />}><OnlineOrderSettings /></Suspense>
                 </RoleProtectedRoute>
               } />
               <Route path="/online/notifications" element={

@@ -67,6 +67,11 @@ module.exports = (sequelize) => {
     unit_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
+    },
+    show_online: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     }
     // Additional fields may be needed based on the actual database schema
   }, {

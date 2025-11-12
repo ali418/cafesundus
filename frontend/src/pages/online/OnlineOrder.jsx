@@ -154,6 +154,9 @@ const OnlineOrder = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(1); // Default to 'All'
   const [filteredProducts, setFilteredProducts] = useState([]);
+  // Availability gating
+  const [ordersOpen, setOrdersOpen] = useState(true);
+  const [ordersClosedMessage, setOrdersClosedMessage] = useState('');
   
   // State for customer information with localStorage persistence
   const [customerInfo, setCustomerInfo] = useLocalStorage('customerInfo', {
@@ -241,14 +244,66 @@ const OnlineOrder = () => {
   const deliveryFee = DELIVERY_FEE;
   const total = subtotal + tax + deliveryFee;
   
-  // Fetch products and categories from API
+  // Fetch settings, products, and categories from API
   useEffect(() => {
     // Function to fetch products and categories
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+        // Fetch settings first to determine availability
+        const settings = await apiService.getSettings();
+        const enabled = Boolean(settings.online_orders_enabled);
+        const startTime = settings.online_orders_start_time || '00:00';
+        const endTime = settings.online_orders_end_time || '23:59';
+        const days = settings.online_orders_days || null; // array of 0-6 (0=Sunday)
+
+        const now = new Date();
+        const currentDay = now.getDay();
+        const toMinutes = (str) => {
+          const [h, m] = String(str).split(':').map((x) => parseInt(x, 10));
+          if (isNaN(h) || isNaN(m)) return 0;
+          return h * 60 + m;
+        };
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const startMinutes = toMinutes(startTime);
+        const endMinutes = toMinutes(endTime);
+
+        let isOpen = enabled;
+        if (isOpen && Array.isArray(days) && days.length > 0 && !days.includes(currentDay)) {
+          isOpen = false;
+        } else if (isOpen) {
+          const wrapsMidnight = endMinutes < startMinutes;
+          if (wrapsMidnight) {
+            isOpen = nowMinutes >= startMinutes || nowMinutes < endMinutes;
+          } else {
+            isOpen = nowMinutes >= startMinutes && nowMinutes < endMinutes;
+          }
+        }
+
+        setOrdersOpen(isOpen);
+        setOrdersClosedMessage(t('online:ordersClosedMessage', 'الطلبات عبر الإنترنت غير متاحة حالياً. يرجى المحاولة خلال الساعات المحددة.'));
+
+        // If closed, still show categories but skip products
+        if (!isOpen) {
+          let allCategories = [{ id: 1, name: t('all') }];
+          try {
+            const categoriesData = await apiService.getCategories();
+            const sortedCategories = (categoriesData || []).sort((a, b) => {
+              if (a.display_order !== b.display_order) {
+                return (a.display_order || 0) - (b.display_order || 0);
+              }
+              return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+            });
+            allCategories = allCategories.concat(sortedCategories);
+          } catch (catErr) {
+            console.warn('Fetching categories failed, using default only', catErr);
+          }
+          setCategories(allCategories);
+          setProducts([]);
+          return;
+        }
+
         // Fetch products directly
         const productsData = await apiService.getProducts();
         const safeProducts = Array.isArray(productsData) ? productsData.map(product => ({
@@ -256,7 +311,9 @@ const OnlineOrder = () => {
           price: parsePrice(product.price), // Ensure price is a number
           stock: parseInt(product.stock) || 0 // Ensure stock is a number
         })) : [];
-        setProducts(safeProducts);
+        // Only show products marked for online availability
+        const onlineProducts = (safeProducts || []).filter(p => Boolean(p.show_online));
+        setProducts(onlineProducts);
         
         // Fetch categories (gracefully fallback to just 'All' if it fails)
         let allCategories = [{ id: 1, name: t('all') }];
@@ -1828,6 +1885,11 @@ const OnlineOrder = () => {
       </AppBar>
       
       <Container maxWidth="lg">
+        {!ordersOpen && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {ordersClosedMessage}
+          </Alert>
+        )}
         {orderComplete ? (
           renderOrderComplete()
         ) : (
