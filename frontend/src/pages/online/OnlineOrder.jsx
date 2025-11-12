@@ -253,10 +253,22 @@ const OnlineOrder = () => {
         setError(null);
         // Fetch settings first to determine availability
         const settings = await apiService.getSettings();
-        const enabled = Boolean(settings.online_orders_enabled);
+        // Coerce enabled to a proper boolean (handles true/'true'/1/'1')
+        const enabled = (
+          settings.online_orders_enabled === true ||
+          settings.online_orders_enabled === 'true' ||
+          settings.online_orders_enabled === 1 ||
+          settings.online_orders_enabled === '1'
+        );
         const startTime = settings.online_orders_start_time || '00:00';
         const endTime = settings.online_orders_end_time || '23:59';
-        const days = settings.online_orders_days || null; // array of 0-6 (0=Sunday)
+        // Ensure days array contains numeric values (0-6). Backend may return strings.
+        const rawDays = settings.online_orders_days;
+        const days = Array.isArray(rawDays)
+          ? rawDays
+              .map((d) => Number(d))
+              .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+          : null; // array of 0-6 (0=Sunday)
 
         const now = new Date();
         const currentDay = now.getDay();
